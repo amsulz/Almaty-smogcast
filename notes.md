@@ -134,3 +134,12 @@ I can't just compare the winters before and after. One winter could be warmer, w
 In the past winter checks, the gap between measured and predicted seasonal averages was as big as 35.4%. So a drop after the switch could still be a model error. I can't use 35.4% as a strict cutoff either. Even a bigger difference wouldn't prove that CHP-2 caused it.
 
 There are no measurements after the switch yet. I plan to run the tracker once a week when new PM2.5 data becomes available.
+## Day 15
+
+Today I made a simple demo with Streamlit. It shows the model's PM2.5 forecast for the next day, the level (good, unhealthy or very unhealthy) and charts for the last 14 days and the last week.
+
+The weather archive is about 5 days behind. For the recent days and tomorrow, I use weather data from the Open-Meteo forecast API.
+
+The embassy station stopped sending data in November 2025, so the demo still shows a forecast for an old date. I need to connect the AirGradient sensors so it can use current PM2.5 measurements.
+
+For now it only runs on my computer. I might put it online later, once it works with current data.
