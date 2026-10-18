@@ -76,7 +76,7 @@ I made features.py to turn hourly data into one row per day with 38 features. Th
 Tomorrow's weather comes from actual recorded data, so it works like a perfect forecast. Real forecasts can be wrong, so the results may look better than they would in practice.
 ## Day 9
 
-I made evaluate.py. It calculates MAE, RMSE and how often the model gets the air quality category right (good, unhealthy or very unhealthy).
+I made evaluate.py. It calculates MAE, RMSE and how often the model gets the air quality category right (low, high or very high).
 
 I split the data by time: train is September 2020 - 2023, validation is 2024 and test is 2025. I can't shuffle the days, because then the model would see days from the future and the results would look better than they really are.
 
@@ -136,7 +136,7 @@ In the past winter checks, the gap between measured and predicted seasonal avera
 There are no measurements after the switch yet. I plan to run the tracker once a week when new PM2.5 data becomes available.
 ## Day 15
 
-Today I made a simple demo with Streamlit. It shows the model's PM2.5 forecast for the next day, the level (good, unhealthy or very unhealthy) and charts for the last 14 days and the last week.
+Today I made a simple demo with Streamlit. It shows the model's PM2.5 forecast for the next day, the level (low, high or very high.) and charts for the last 14 days and the last week.
 
 The weather archive is about 5 days behind. For the recent days and tomorrow, I use weather data from the Open-Meteo forecast API.
 
