@@ -42,9 +42,14 @@ def main():
     # 3. linear regression. it can't handle NaN, so fill with the median from train
     linear = make_pipeline(SimpleImputer(strategy="median"), StandardScaler(), LinearRegression())
     linear.fit(train[cols], train.target)
-    for split, part in [("val", val), ("test", test)]:
-        save_metrics("linear regression", split, part.target, linear.predict(part[cols]))
-    save_predictions(test.date, linear.predict(test[cols]), "linear")
+    save_metrics("linear regression", "val", val.target, linear.predict(val[cols]))
+
+    # for the test, retrain on train + val, same as LightGBM below, so the comparison is fair
+    train_val = daily[daily.date < test.date.min()]
+    linear.fit(train_val[cols], train_val.target)
+    pred_linear = linear.predict(test[cols])
+    save_metrics("linear regression", "test", test.target, pred_linear, note="trained on train+val")
+    save_predictions(test.date, pred_linear, "linear")
 
     # 4. LightGBM. early stopping on val to pick the number of trees
     model = lgb.train(
@@ -60,7 +65,6 @@ def main():
 
     # for the test, retrain on train + val with the same number of trees.
     # 2024 is the closest year to 2025, it would be a waste not to use it
-    train_val = daily[daily.date < test.date.min()]
     final = lgb.train(LGB_PARAMS, lgb.Dataset(train_val[cols], train_val.target), num_boost_round=best)
     pred = final.predict(test[cols])
     save_metrics("LightGBM", "test", test.target, pred, note="trained on train+val")

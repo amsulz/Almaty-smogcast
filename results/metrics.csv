@@ -4,6 +4,6 @@ baseline (tomorrow = today),test,8.83,15.1,0.888,313,
 CAMS,val,10.41,18.15,0.808,344,
 CAMS,test,10.19,18.13,0.879,314,
 linear regression,val,9.52,12.59,0.82,344,
-linear regression,test,9.66,13.17,0.86,314,
+linear regression,test,9.55,12.88,0.876,314,trained on train+val
 LightGBM,val,8.87,11.72,0.91,344,
 LightGBM,test,6.84,11.52,0.924,314,trained on train+val
