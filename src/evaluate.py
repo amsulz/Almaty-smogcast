@@ -7,7 +7,7 @@ from config import RESULTS_DIR
 METRICS_FILE = RESULTS_DIR / "metrics.csv"
 
 # US EPA breakpoints (2024 version) squeezed into 3 groups for the demo
-CATEGORIES = ["good", "unhealthy", "very unhealthy"]
+CATEGORIES = ["low", "high", "very high"]
 
 
 def category(pm25):
