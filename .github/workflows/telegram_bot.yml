@@ -1,0 +1,31 @@
+# Runs the Telegram bot every evening on GitHub, so my computer doesn't need to be on.
+name: Telegram forecast
+
+on:
+  schedule:
+    - cron: "0 17 * * *"  # 17:00 UTC = 22:00 in Almaty, today's PM2.5 is mostly in by then
+  workflow_dispatch:  # "Run workflow" button for testing
+
+jobs:
+  forecast:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      OPENAQ_API_KEY: ${{ secrets.OPENAQ_API_KEY }}
+      TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      # only what the bot needs, the full requirements.txt has jupyter, shap etc.
+      - run: pip install pandas numpy requests python-dotenv scikit-learn lightgbm
+      # data/ and models/ are not on GitHub, so download everything and train the model first
+      - run: python src/download_openaq.py
+      - run: python src/download_cams.py
+      - run: python src/download_weather.py
+      - run: python src/build_dataset.py
+      - run: python src/train.py
+      # the bot itself downloads fresh AirGradient data and sends the forecast
+      - run: python src/telegram_bot.py
