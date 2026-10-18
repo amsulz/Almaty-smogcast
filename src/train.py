@@ -78,6 +78,9 @@ def main():
     # but the "real" PM2.5 here is from cheap AirGradient sensors, so it's less exact
     new = airgradient_part(daily)
     print(f"\nAirGradient days: {len(new)}")
+    if new.empty:
+        # no pm25_airgradient.csv yet (run download_airgradient.py), e.g. in the GitHub bot run
+        return
     note = "AirGradient sensors, scaled to the embassy"
     save_metrics("baseline (tomorrow = today)", "airgradient", new.target, new.pm25, note=note)
     save_metrics("CAMS", "airgradient", new.target, new.cams_tomorrow, note=note)
