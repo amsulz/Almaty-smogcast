@@ -154,3 +154,22 @@ I renamed the air groups from good / unhealthy / very unhealthy to low / high / 
 For the test comparison, I retrained linear regression on train + validation, just like LightGBM. Its MAE improved slightly, from 9.66 to 9.55. LightGBM still performed better, with an MAE of 6.84.
 
 Next, I want to test the model with weather forecasts instead of actual next-day weather and look more closely at the large errors on polluted days. The CHP-2 analysis still needs data from after the switch.
+## Day 17 — AirGradient
+
+The embassy station stopped reporting on 14 November 2025. I needed another source of PM2.5 data to keep the project going, so I looked at nearby AirGradient sensors.
+
+The main problem was that their readings were higher than the embassy measurements. Only one sensor had enough overlapping data for a comparison. Across 331 shared days, it read about 1.45 times higher, so I used a correction factor of 0.69. The correlation between the two sources was 0.93, but that alone does not mean their readings agree.
+
+I applied this correction to seven sensors within 1.6 km of the station coordinates listed in OpenAQ. I took their median so one unusual reading would have less effect. The correction comes from just one sensor, so applying it to all seven is still an assumption. I also need to verify the station coordinates.
+
+On the AirGradient days, LightGBM got an MAE of 6.98 µg/m³, compared with 7.15 for the “tomorrow = today” baseline. That is only a small improvement. I kept these results separate from the original test because the data source had changed.
+
+## Day 18 — Telegram bot
+
+I made a Telegram bot that sends the PM2.5 forecast for tomorrow. It runs through GitHub Actions at 22:00 Almaty time, so I don’t have to leave my computer on. I put the API keys in GitHub Secrets.
+
+Getting it to run there took a few fixes. Everything worked on my computer, but GitHub started without the data files I already had locally. The training code failed when the AirGradient table was empty. I hadn’t caught that on my own machine.
+
+Even after I fixed it, I kept getting the same error. I was clicking “Re-run”, which used the old commit. Once I started a new run, it picked up the fix.
+
+I also noticed a problem with the message itself. At 26 µg/m³, the bot showed a green icon and said “low”. My dad could read that as “the air is good”, even though it falls in the EPA’s moderate category. I changed the bot to use the full EPA categories and added a short recommendation.
