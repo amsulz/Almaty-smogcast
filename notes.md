@@ -109,7 +109,7 @@ I used early stopping to choose how many trees to use. It stops training when th
 
 Today I used SHAP to better understand how my LightGBM model makes predictions. It helped me see which features matter the most and how they affect the predicted pollution level on different days.
 
-I divided the features into four groups: weather, heating/season, traffic (weekdays and holidays), and past pollution levels. When I excluded past pollution, weather accounted for around 92% of the total SHAP importance, heating/season for about 7%, and traffic for almost 0%.
+I divided the features into four groups: weather, heating/season, traffic (weekdays and holidays), and past pollution levels. After leaving out past pollution from the SHAP summary, weather made up about 92% of the remaining importance, heating/season about 7%, and traffic almost 0%. These numbers describe how my model uses the features, not what causes the pollution. They do not mean that weather causes 92% of the smog. For traffic, I only used weekdays, weekends and holidays, with no actual traffic measurements. So the low importance does not mean cars have no effect.
 
 I also checked the three days with the highest pollution levels. All three were very cold (-6 to -14°C), and the boundary layer height (BLH) was only around 24–34 meters. This suggests that the weather made it harder for pollution to spread out.
 
