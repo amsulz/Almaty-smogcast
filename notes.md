@@ -85,7 +85,7 @@ At first I wanted to test on 2026, but the embassy station stopped working on 14
 The simplest baseline is "tomorrow = today". It got an MAE of 8.83 µg/m³ on the test year. CAMS got 10.19, so even this simple guess is more accurate than CAMS for Almaty
 ## Day 10
 
-I made train.py and compared four forecasts on the 2025 test data. CAMS got MAE 10.19 µg/m³, linear regression 9.66, the baseline 8.83 and LightGBM 6.84.
+I made train.py and compared four forecasts on the 2025 test data. CAMS got MAE 10.19 µg/m³, linear regression 9.55, the baseline 8.83 and LightGBM 6.84.
 
 LightGBM did best in this run. Its MAE was about 33% lower than CAMS and 23% lower than the baseline. It also got the PM2.5 group right on about 92% of test days.
 
@@ -136,10 +136,21 @@ In the past winter checks, the gap between measured and predicted seasonal avera
 There are no measurements after the switch yet. I plan to run the tracker once a week when new PM2.5 data becomes available.
 ## Day 15
 
-Today I made a simple demo with Streamlit. It shows the model's PM2.5 forecast for the next day, the level (low, high or very high.) and charts for the last 14 days and the last week.
+Today I made a simple demo with Streamlit. It shows the model's PM2.5 forecast for the next day, the level (low, high or very high) and charts for the last 14 days and the last week.
 
 The weather archive is about 5 days behind. For the recent days and tomorrow, I use weather data from the Open-Meteo forecast API.
 
 The embassy station stopped sending data in November 2025, so the demo still shows a forecast for an old date. I need to connect the AirGradient sensors so it can use current PM2.5 measurements.
 
 For now it only runs on my computer. I might put it online later, once it works with current data.
+## Day 16
+
+I got feedback on my project and fixed a few things.
+
+My SHAP explanation was misleading. After leaving past pollution out of the summary, weather had about 92% of the remaining importance. This shows how the model uses the features, not what causes the smog. I also clarified that my traffic features are just weekdays, weekends and holidays. Their low importance does not mean cars have no effect.
+
+I renamed the air groups from good / unhealthy / very unhealthy to low / high / very high in the code, app and notes. My lowest group went up to 35.4 µg/m³, so calling it "good" was misleading (on the EPA scale, "good" ends at 9). These are now labelled as my own concentration groups.
+
+For the test comparison, I retrained linear regression on train + validation, just like LightGBM. Its MAE improved slightly, from 9.66 to 9.55. LightGBM still performed better, with an MAE of 6.84.
+
+Next, I want to test the model with weather forecasts instead of actual next-day weather and look more closely at the large errors on polluted days. The CHP-2 analysis still needs data from after the switch.
