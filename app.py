@@ -17,7 +17,7 @@ from config import LATITUDE, LONGITUDE, MODELS_DIR, TIMEZONE  # noqa: E402
 from evaluate import category  # noqa: E402
 from features import feature_columns, load_hourly, make_features  # noqa: E402
 
-COLORS = {"good": "#3a9b3a", "unhealthy": "#e08a1e", "very unhealthy": "#c0392b"}
+COLORS = {"low": "#3a9b3a", "high": "#e08a1e", "very high": "#c0392b"}
 WEATHER = {
     "temperature_2m": "temp",
     "relative_humidity_2m": "humidity",
@@ -104,5 +104,5 @@ st.subheader("Hourly, last 7 days")
 week = hourly[(hourly.time > today.date - pd.Timedelta(days=6)) & (hourly.time < tomorrow)]
 st.line_chart(week.set_index("time")[["pm25"]])
 
-st.caption("Colors: good (0-35), unhealthy (35-125), very unhealthy (125+), "
+st.caption("Colors: low (0-35), high (35-125), very high (125+), "
            "roughly based on US EPA levels. WHO says the daily mean should be under 15.")
