@@ -1,11 +1,16 @@
 """Merge PM2.5, weather and CAMS into one hourly table: data/processed/dataset.csv"""
 import pandas as pd
 
-from config import PROCESSED_DIR, RAW_DIR, START_DATE
+from config import EMBASSY_END, PROCESSED_DIR, RAW_DIR, START_DATE
 
 
 def main():
     pm = pd.read_csv(RAW_DIR / "pm25_openaq.csv", parse_dates=["time"])
+    # after the embassy stopped, PM2.5 comes from AirGradient sensors (download_airgradient.py)
+    airgradient_file = RAW_DIR / "pm25_airgradient.csv"
+    if airgradient_file.exists():
+        ag = pd.read_csv(airgradient_file, parse_dates=["time"])
+        pm = pd.concat([pm[pm.time < EMBASSY_END], ag[ag.time >= EMBASSY_END]])
     weather = pd.read_csv(RAW_DIR / "weather.csv", parse_dates=["time"])
     cams = pd.read_csv(RAW_DIR / "cams.csv", parse_dates=["time"])
 

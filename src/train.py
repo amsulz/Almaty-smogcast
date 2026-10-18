@@ -7,7 +7,7 @@ from sklearn.preprocessing import StandardScaler
 
 from config import MODELS_DIR
 from evaluate import save_metrics, save_predictions
-from features import feature_columns, make_features, split_by_time
+from features import airgradient_part, feature_columns, make_features, split_by_time
 
 LGB_PARAMS = {
     "objective": "regression_l1",  # MAE, smog has big spikes and L2 chases them too much
@@ -73,6 +73,16 @@ def main():
     MODELS_DIR.mkdir(exist_ok=True)
     final.save_model(str(MODELS_DIR / "lgbm.txt"))
     print(f"saved model to {MODELS_DIR / 'lgbm.txt'}")
+
+    # 5. one more check on days after the embassy stopped. The model never saw them,
+    # but the "real" PM2.5 here is from cheap AirGradient sensors, so it's less exact
+    new = airgradient_part(daily)
+    print(f"\nAirGradient days: {len(new)}")
+    note = "AirGradient sensors, scaled to the embassy"
+    save_metrics("baseline (tomorrow = today)", "airgradient", new.target, new.pm25, note=note)
+    save_metrics("CAMS", "airgradient", new.target, new.cams_tomorrow, note=note)
+    save_metrics("linear regression", "airgradient", new.target, linear.predict(new[cols]), note=note)
+    save_metrics("LightGBM", "airgradient", new.target, final.predict(new[cols]), note=note)
 
 
 if __name__ == "__main__":

@@ -6,7 +6,7 @@ which I take from the archive as if it was a perfect weather forecast (see READM
 """
 import pandas as pd
 
-from config import HEATING_END, HEATING_START, PROCESSED_DIR, TRAIN_END, VAL_END
+from config import EMBASSY_END, HEATING_END, HEATING_START, PROCESSED_DIR, TRAIN_END, VAL_END
 
 # Kazakhstan public holidays with fixed dates (month, day).
 # Kurban Ait moves every year so I skip it.
@@ -125,8 +125,13 @@ def feature_columns(daily):
 def split_by_time(daily):
     train = daily[daily.date < TRAIN_END]
     val = daily[(daily.date >= TRAIN_END) & (daily.date < VAL_END)]
-    test = daily[daily.date >= VAL_END]
+    test = daily[(daily.date >= VAL_END) & (daily.date < EMBASSY_END)]
     return train, val, test
+
+
+def airgradient_part(daily):
+    # days after the embassy stopped, PM2.5 comes from AirGradient sensors (see download_airgradient.py)
+    return daily[daily.date >= EMBASSY_END]
 
 
 if __name__ == "__main__":

@@ -1,0 +1,56 @@
+"""Forecast for tomorrow from the newest data. Used by the demo site (app.py) and the Telegram bot."""
+import lightgbm as lgb
+import pandas as pd
+import requests
+
+from config import LATITUDE, LONGITUDE, MODELS_DIR, TIMEZONE
+from features import feature_columns, load_hourly, make_features
+
+WEATHER = {
+    "temperature_2m": "temp",
+    "relative_humidity_2m": "humidity",
+    "wind_speed_10m": "wind",
+    "surface_pressure": "pressure",
+    "precipitation": "precipitation",
+    "boundary_layer_height": "blh",
+}
+
+
+def recent_weather():
+    # the archive is ~5 days behind, so the last days + tomorrow come from the forecast API
+    params = {
+        "latitude": LATITUDE,
+        "longitude": LONGITUDE,
+        "hourly": ",".join(WEATHER),
+        "past_days": 10,
+        "forecast_days": 3,
+        "timezone": TIMEZONE,
+    }
+    r = requests.get("https://api.open-meteo.com/v1/forecast", params=params, timeout=30)
+    r.raise_for_status()
+    df = pd.DataFrame(r.json()["hourly"]).rename(columns=WEATHER)
+    df["time"] = pd.to_datetime(df["time"])
+    return df.set_index("time")
+
+
+def load_data():
+    """Hourly table + daily features, with the archive weather filled up by the forecast."""
+    hourly = load_hourly().set_index("time")
+    fc = recent_weather()
+    # full hour range, so a gap between the archive and the forecast doesn't break the days
+    hourly = hourly.reindex(pd.date_range(hourly.index.min(), fc.index.max(), freq="h"))
+    for col in WEATHER.values():
+        hourly[col] = hourly[col].fillna(fc[col])
+    hourly = hourly.reset_index().rename(columns={"index": "time"})
+    return hourly, make_features(hourly)
+
+
+def load_model():
+    return lgb.Booster(model_file=str(MODELS_DIR / "lgbm.txt"))
+
+
+def predict_tomorrow(model, daily):
+    # "today" = the last day where we have enough PM2.5 measurements
+    today = daily.dropna(subset=["pm25_mean24h"]).iloc[-1]
+    pred = model.predict(today[feature_columns(daily)].to_frame().T.astype(float))[0]
+    return today, today.date + pd.Timedelta(days=1), pred
