@@ -82,7 +82,7 @@ I split the data by time: train is September 2020 - 2023, validation is 2024 and
 
 At first I wanted to test on 2026, but the embassy station stopped working on 14 November 2025. So the test year is 2025.
 
-The simplest baseline is "tomorrow = today". It got an MAE of 8.83 µg/m³ on the test year. CAMS got 10.19, so even this simple guess is more accurate than CAMS for Almaty
+The simplest baseline is "tomorrow = today". It got an MAE of 8.83 µg/m³ on the test year. CAMS got 10.19, so even this simple guess is more accurate than CAMS for Almaty.
 ## Day 10
 
 I made train.py and compared four forecasts on the 2025 test data. CAMS got MAE 10.19 µg/m³, linear regression 9.55, the baseline 8.83 and LightGBM 6.84.
