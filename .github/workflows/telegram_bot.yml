@@ -3,7 +3,8 @@ name: Telegram forecast
 
 on:
   schedule:
-    - cron: "0 17 * * *"  # 17:00 UTC = 22:00 in Almaty, today's PM2.5 is mostly in by then
+    # 17:07 UTC = 22:07 in Almaty. Not 17:00: at the start of the hour GitHub is busy and can skip the run
+    - cron: "7 17 * * *"
   workflow_dispatch:  # "Run workflow" button for testing
 
 jobs:
@@ -18,17 +19,16 @@ jobs:
       BOT_SERVER_URL: ${{ secrets.BOT_SERVER_URL }}
       SERVER_SECRET: ${{ secrets.SERVER_SECRET }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
       # only what the bot needs, the full requirements.txt has jupyter, shap etc.
       - run: pip install pandas numpy requests python-dotenv scikit-learn lightgbm
-      # data/ and models/ are not on GitHub, so download everything and train the model first
+      # data/ is not on GitHub, so download it first. The model is in models/lgbm.txt, no training here
       - run: python src/download_openaq.py
       - run: python src/download_cams.py
       - run: python src/download_weather.py
       - run: python src/build_dataset.py
-      - run: python src/train.py
       # the bot itself downloads fresh AirGradient data and sends the forecast
       - run: python src/telegram_bot.py
