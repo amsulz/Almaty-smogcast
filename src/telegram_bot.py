@@ -8,6 +8,10 @@ Setup (once):
 
 Every evening:  python src/telegram_bot.py
 On GitHub it runs by itself every evening: .github/workflows/telegram_bot.yml
+Once, to send the scale (then pin it in the chat):  python src/telegram_bot.py --scale
+With BOT_SERVER_URL and SERVER_SECRET set, the forecast goes to the server instead,
+and the server sends it to everyone who pressed /start (server/bot_server.py).
+After the server is connected, --chat-id doesn't work any more (Telegram sends messages to the server).
 """
 import os
 import sys
@@ -24,12 +28,12 @@ API = "https://api.telegram.org/bot{token}/{method}"
 # US EPA PM2.5 scale (2024), 24h average. For the message I use the full official scale,
 # my 3 groups in evaluate.py are too rough to tell people if they can go for a walk
 LEVELS = [
-    (9, "🟢", "чисто", "можно гулять всем"),
-    (35.4, "🟡", "умеренно", "гулять можно, чувствительным людям лучше не подолгу"),
-    (55.4, "🟠", "вредно для чувствительных", "пожилым, детям и людям с больными лёгкими лучше сократить прогулки"),
-    (125.4, "🔴", "вредно", "всем лучше меньше быть на улице"),
-    (225.4, "🟣", "очень вредно", "лучше остаться дома и закрыть окна"),
-    (float("inf"), "🟤", "опасно", "не выходить без необходимости"),
+    (9, "🟢", "чисто", "Можно гулять всем."),
+    (35.4, "🟡", "умеренно", "Гулять можно, чувствительным людям лучше не подолгу."),
+    (55.4, "🟠", "вредно для чувствительных", "Пожилым, детям и людям с больными лёгкими лучше сократить прогулки."),
+    (125.4, "🔴", "вредно", "Всем лучше меньше быть на улице."),
+    (225.4, "🟣", "очень вредно", "Лучше остаться дома и закрыть окна."),
+    (float("inf"), "🟤", "опасно", "Не выходить без необходимости."),
 ]
 SCALE = (
     "Шкала PM2.5 (мкг/м³ за сутки, EPA):\n"
@@ -38,7 +42,8 @@ SCALE = (
     "🟠 35-55 вредно для чувствительных\n"
     "🔴 55-125 вредно\n"
     "🟣 125-225 очень вредно\n"
-    "🟤 225+ опасно"
+    "🟤 225+ опасно\n\n"
+    "Каждый вечер я присылаю прогноз на завтра. Норма ВОЗ за день: 15."
 )
 
 
@@ -70,12 +75,11 @@ def make_message():
     build_dataset.main()
 
     _, daily = load_data()
-    today, tomorrow, pred = predict_tomorrow(load_model(), daily)
+    _, tomorrow, pred = predict_tomorrow(load_model(), daily)
     icon, name, advice = level(pred)
-    return (f"{SCALE}\n\n"
-            f"Алматы, прогноз PM2.5 на {tomorrow:%d.%m}: {pred:.0f} мкг/м³\n"
-            f"{icon} {name}: {advice}\n"
-            f"Сегодня было {today.pm25_mean24h:.0f}. Норма ВОЗ за день: 15.")
+    # short, the scale was sent once with --scale
+    return (f"Прогноз на завтра ({tomorrow:%d.%m}): {pred:.0f} мкг/м³, {icon} {name}.\n"
+            f"{advice}")
 
 
 def main():
@@ -87,10 +91,21 @@ def main():
         print_chat_ids(token)
         return
 
+    server = os.getenv("BOT_SERVER_URL")
+    if server and "--scale" not in sys.argv:
+        text = make_message()
+        print(text)
+        # the server on PythonAnywhere sends it to everyone who pressed /start (server/bot_server.py)
+        r = requests.post(server.rstrip("/") + "/broadcast", json={"text": text, "scale": SCALE},
+                          headers={"X-Server-Secret": os.getenv("SERVER_SECRET")}, timeout=300)
+        r.raise_for_status()
+        print(r.json())
+        return
+
     chat_id = os.getenv("TELEGRAM_CHAT_ID")
     if not chat_id:
         raise SystemExit("Set TELEGRAM_CHAT_ID in .env, run with --chat-id to find it")
-    text = make_message()
+    text = SCALE if "--scale" in sys.argv else make_message()
     print(text)
     telegram(token, "sendMessage", chat_id=chat_id, text=text)
     print("sent")
