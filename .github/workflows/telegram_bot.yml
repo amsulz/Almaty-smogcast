@@ -14,6 +14,9 @@ jobs:
       OPENAQ_API_KEY: ${{ secrets.OPENAQ_API_KEY }}
       TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
       TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+      # the server on PythonAnywhere that sends the forecast to all subscribers
+      BOT_SERVER_URL: ${{ secrets.BOT_SERVER_URL }}
+      SERVER_SECRET: ${{ secrets.SERVER_SECRET }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
