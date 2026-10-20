@@ -184,3 +184,4 @@ I also had to choose how strong this penalty should be. With a strong penalty th
 On the test set the error went down from 6.84 to 6.39, and on the 10% dirtiest days from 24.9 to 19.5. On the AirGradient days it went from 6.98 to 6.34. On validation the overall error got slightly worse, from 8.87 to 9.03, but on the dirtiest days it improved from 15.95 to 14.84.
 
 So the model now underpredicts real pollution less. The Telegram bot uses the new model, and the demo app still uses the old one.
+
