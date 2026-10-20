@@ -75,7 +75,8 @@ def make_message():
     build_dataset.main()
 
     _, daily = load_data()
-    _, tomorrow, pred = predict_tomorrow(load_model(), daily)
+    # the model with AirCast weights: for health it's worse to miss a dirty day than to be a bit off on a clean one
+    _, tomorrow, pred = predict_tomorrow(load_model("lgbm_weighted.txt"), daily)
     icon, name, advice = level(pred)
     # short, the scale was sent once with --scale
     return (f"Прогноз на завтра ({tomorrow:%d.%m}): {pred:.0f} мкг/м³, {icon} {name}.\n"

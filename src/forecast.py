@@ -45,8 +45,8 @@ def load_data():
     return hourly, make_features(hourly)
 
 
-def load_model():
-    return lgb.Booster(model_file=str(MODELS_DIR / "lgbm.txt"))
+def load_model(name="lgbm.txt"):
+    return lgb.Booster(model_file=str(MODELS_DIR / name))
 
 
 def predict_tomorrow(model, daily):

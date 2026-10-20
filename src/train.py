@@ -1,4 +1,4 @@
-"""Baseline, CAMS, linear regression and LightGBM. Results go to results/metrics.csv"""
+"""Baseline, CAMS, linear regression, LightGBM and LightGBM with AirCast weights. Results go to results/metrics.csv"""
 import lightgbm as lgb
 from sklearn.impute import SimpleImputer
 from sklearn.linear_model import LinearRegression
@@ -19,6 +19,15 @@ LGB_PARAMS = {
     "bagging_freq": 1,
     "verbose": -1,
 }
+
+
+# Without weights the model pulls predictions toward common values and underpredicts heavy smog.
+# This gives rare days a bigger penalty for errors, so the model can't ignore them.
+def rarity_weights(target, bin_size=10, power=0.1):
+    bins = (target // bin_size).astype(int)    # bin number, e.g. 23 // 10 = 2 (20-29 µg), 105 // 10 = 10 (100-109 µg)
+    counts = bins.map(bins.value_counts())     # how often each bin happens: bin 2 is very common, bin 10 is very rare
+    w = (1 / counts) ** power                  # rare bin = bigger penalty for errors, power 0.1 makes it softer
+    return w / w.mean()                        # average weight = 1
 
 
 def main():
@@ -74,7 +83,25 @@ def main():
     final.save_model(str(MODELS_DIR / "lgbm.txt"))
     print(f"saved model to {MODELS_DIR / 'lgbm.txt'}")
 
-    # 5. one more check on days after the embassy stopped. The model never saw them,
+    # 5. LightGBM + AirCast weights. The Telegram bot uses this one
+    weighted = lgb.train(
+        LGB_PARAMS,
+        lgb.Dataset(train[cols], train.target, weight=rarity_weights(train.target)),
+        num_boost_round=3000,
+        valid_sets=[lgb.Dataset(val[cols], val.target)],
+        callbacks=[lgb.early_stopping(100, verbose=False)],
+    )
+    best_w = weighted.best_iteration
+    save_metrics("LightGBM + AirCast weights", "val", val.target, weighted.predict(val[cols], num_iteration=best_w))
+    final_w = lgb.train(LGB_PARAMS, lgb.Dataset(train_val[cols], train_val.target,
+                                                weight=rarity_weights(train_val.target)),
+                        num_boost_round=best_w)
+    pred_w = final_w.predict(test[cols])
+    save_metrics("LightGBM + AirCast weights", "test", test.target, pred_w, note="trained on train+val")
+    save_predictions(test.date, pred_w, "lightgbm_weighted")
+    final_w.save_model(str(MODELS_DIR / "lgbm_weighted.txt"))
+
+    # 6. one more check on days after the embassy stopped. The model never saw them,
     # but the "real" PM2.5 here is from cheap AirGradient sensors, so it's less exact
     new = airgradient_part(daily)
     print(f"\nAirGradient days: {len(new)}")
@@ -86,6 +113,7 @@ def main():
     save_metrics("CAMS", "airgradient", new.target, new.cams_tomorrow, note=note)
     save_metrics("linear regression", "airgradient", new.target, linear.predict(new[cols]), note=note)
     save_metrics("LightGBM", "airgradient", new.target, final.predict(new[cols]), note=note)
+    save_metrics("LightGBM + AirCast weights", "airgradient", new.target, final_w.predict(new[cols]), note=note)
 
 
 if __name__ == "__main__":

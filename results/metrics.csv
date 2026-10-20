@@ -7,7 +7,10 @@ linear regression,val,9.52,12.59,0.82,344,
 linear regression,test,9.55,12.88,0.876,314,trained on train+val
 LightGBM,val,8.87,11.72,0.91,344,
 LightGBM,test,6.84,11.52,0.924,314,trained on train+val
+LightGBM + AirCast weights,val,9.03,11.96,0.904,344,
+LightGBM + AirCast weights,test,6.39,10.45,0.917,314,trained on train+val
 baseline (tomorrow = today),airgradient,7.15,12.78,0.923,298,"AirGradient sensors, scaled to the embassy"
 CAMS,airgradient,11.24,15.41,0.89,299,"AirGradient sensors, scaled to the embassy"
 linear regression,airgradient,8.16,11.34,0.756,299,"AirGradient sensors, scaled to the embassy"
 LightGBM,airgradient,6.98,9.81,0.933,299,"AirGradient sensors, scaled to the embassy"
+LightGBM + AirCast weights,airgradient,6.34,9.46,0.93,299,"AirGradient sensors, scaled to the embassy"
