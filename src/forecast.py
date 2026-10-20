@@ -42,7 +42,11 @@ def load_data():
     for col in WEATHER.values():
         hourly[col] = hourly[col].fillna(fc[col])
     hourly = hourly.reset_index().rename(columns={"index": "time"})
-    return hourly, make_features(hourly)
+    daily = make_features(hourly)
+    pm = hourly.set_index("time").pm25.dropna()
+    last_day = daily.date == pm.index.max().normalize()
+    daily.loc[last_day, "pm25_lag1h"] = daily.loc[last_day, "pm25_lag1h"].fillna(pm.iloc[-1])
+    return hourly, daily
 
 
 def load_model(name="lgbm.txt"):
