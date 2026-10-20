@@ -173,3 +173,14 @@ Getting it to run there took a few fixes. Everything worked on my computer, but 
 Even after I fixed it, I kept getting the same error. I was clicking “Re-run”, which used the old commit. Once I started a new run, it picked up the fix.
 
 I also noticed a problem with the message itself. At 26 µg/m³, the bot showed a green icon and said “low”. My dad could read that as “the air is good”, even though it falls in the EPA’s moderate category. I changed the bot to use the full EPA categories and added a short recommendation.
+## Day 19: AirCast weights
+
+Some days were especially dirty, but the model didn't pay much attention to them. To keep the average error low, it pulled its predictions toward normal days and underpredicted heavy smog. In many tasks that isn't critical, but with air quality it can be harmful, because those are the days when people need a warning the most.
+
+I read the AirCast paper from MBZUAI. They had the same problem on a much bigger scale and solved it by giving rare days more weight. I did something similar. I put the days into 10 µg/m³ bins by PM2.5 level and counted how common each bin is. Days from rare bins get a bigger penalty for errors, so the model can't ignore them.
+
+I also had to choose how strong this penalty should be. With a strong penalty the test results looked good, but on validation the model started to predict about 12 µg/m³ too high. So I chose by validation, not by test, and kept the penalty weak: a rare day counts about 1.5 times more than a normal one.
+
+On the test set the error went down from 6.84 to 6.39, and on the 10% dirtiest days from 24.9 to 19.5. On the AirGradient days it went from 6.98 to 6.34. On validation the overall error got slightly worse, from 8.87 to 9.03, but on the dirtiest days it improved from 15.95 to 14.84.
+
+So the model now underpredicts real pollution less. The Telegram bot uses the new model, and the demo app still uses the old one
