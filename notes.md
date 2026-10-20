@@ -179,7 +179,7 @@ Some days were especially dirty, but the model didn't pay much attention to them
 
 I read the AirCast paper from MBZUAI. They had the same problem on a much bigger scale and solved it by giving rare days more weight. I did something similar. I put the days into 10 µg/m³ bins by PM2.5 level and counted how common each bin is. Days from rare bins get a bigger penalty for errors, so the model can't ignore them.
 
-I also had to choose how strong this penalty should be. With a strong penalty the test results looked good, but on validation the model started to predict about 12 µg/m³ too high. So I chose by validation, not by test, and kept the penalty weak: a rare day counts about 1.5 times more than a normal one.
+I also had to choose how strong this penalty should be. With a strong penalty the test results looked good, but on validation the model started to predict about 12 µg/m³ too high. So I chose by validation, not by test, and kept the penalty weak: days above 100 µg/m³ count about 1.3 times more than normal days, and the rarest ones about 1.6 times.
 
 On the test set the error went down from 6.84 to 6.39, and on the 10% dirtiest days from 24.9 to 19.5. On the AirGradient days it went from 6.98 to 6.34. On validation the overall error got slightly worse, from 8.87 to 9.03, but on the dirtiest days it improved from 15.95 to 14.84.
 
