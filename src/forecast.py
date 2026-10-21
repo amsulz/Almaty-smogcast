@@ -43,6 +43,8 @@ def load_data():
         hourly[col] = hourly[col].fillna(fc[col])
     hourly = hourly.reset_index().rename(columns={"index": "time"})
     daily = make_features(hourly)
+    # the bot runs at 22:00, so the 23:00 value doesn't exist yet
+    # before, it was empty, now we take the last measured hour
     pm = hourly.set_index("time").pm25.dropna()
     last_day = daily.date == pm.index.max().normalize()
     daily.loc[last_day, "pm25_lag1h"] = daily.loc[last_day, "pm25_lag1h"].fillna(pm.iloc[-1])
