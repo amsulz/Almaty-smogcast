@@ -1,4 +1,6 @@
 """Forecast for tomorrow from the newest data. Used by the demo site (app.py) and the Telegram bot."""
+import time
+
 import lightgbm as lgb
 import pandas as pd
 import requests
@@ -26,8 +28,16 @@ def recent_weather():
         "forecast_days": 3,
         "timezone": TIMEZONE,
     }
-    r = requests.get("https://api.open-meteo.com/v1/forecast", params=params, timeout=30)
-    r.raise_for_status()
+    # open-meteo sometimes doesn't answer in time, so we try 3 times before giving up
+    for attempt in range(3):
+        try:
+            r = requests.get("https://api.open-meteo.com/v1/forecast", params=params, timeout=60)
+            r.raise_for_status()
+            break
+        except requests.RequestException:
+            if attempt == 2:
+                raise
+            time.sleep(30)
     df = pd.DataFrame(r.json()["hourly"]).rename(columns=WEATHER)
     df["time"] = pd.to_datetime(df["time"])
     return df.set_index("time")
