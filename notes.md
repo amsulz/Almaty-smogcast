@@ -185,3 +185,8 @@ On the test set the error went down from 6.84 to 6.39, and on the 10% dirtiest d
 
 So the model now underpredicts real pollution less. The Telegram bot uses the new model, and the demo app still uses the old one.
 
+## Day 20 — Weather timeout
+
+Today the bot didn't send the forecast. The log showed that the problem wasn't in my code: the weather site (Open-Meteo) didn't answer in time. Before, the bot asked only once and waited 30 seconds, and if there was no answer, it stopped.
+
+Now it tries 3 times, waits up to 60 seconds each time, and pauses 30 seconds between tries. It only fails if all three tries don't work.
