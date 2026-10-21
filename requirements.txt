@@ -6,9 +6,7 @@ matplotlib
 seaborn
 scikit-learn
 lightgbm
-xgboost
-optuna
 shap
 jupyter
 streamlit
-# torch is installed separately, see README (needs the CUDA build for the GPU)
+flask  # only for server/bot_server.py
