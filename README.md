@@ -1,6 +1,6 @@
 # Almaty Smogcast
 
-This project predicts tomorrow's PM2.5 level in Almaty. The model was trained on high-quality data from the US station, but the station stopped working in November 2025, so I had to switch to lower-quality data from AirGradient sensors. The forecast is more accurate than CAMS. Every evening, my Telegram bot [@ala_smogfor_bot](https://t.me/ala_smogfor_bot) sends the forecast for tomorrow.
+This project predicts tomorrow's PM2.5 level in Almaty. The model was trained on high-quality data from the US station, but the station stopped working in November 2025, so I had to switch to lower-quality data from AirGradient sensors. On the 2025 test (with archived weather for tomorrow), the forecast was more accurate than CAMS. Every evening, my Telegram bot [@ala_smogfor_bot](https://t.me/ala_smogfor_bot) sends the forecast for tomorrow.
 
 ![Forecast vs real, January-March 2025](results/figures/forecast_vs_real.png)
 
@@ -72,8 +72,15 @@ I compare three simple forecasts ("tomorrow = today", CAMS and linear regression
 
 **How I tested it**
 
-- train: September 2020 - 2023, validation: 2024, test: 2025
+| Part | Period | Days |
+|---|---|---|
+| train | September 2020 - 2023 | 765 |
+| validation | 2024 | 344 |
+| test | 2025 (until 12 November) | 314 |
+
+- Train has only 765 days for more than 3 years, because many days in 2021-2022 had less than 18 hours of data.
 - I split the data by time and didn't shuffle the days. Otherwise the model would see days from the future, and the results would look better than they really are.
+- LightGBM settings: learning rate 0.03, 15 leaves per tree.
 - Early stopping on validation chooses the number of trees. Then I trained the model again on train + validation with the same number of trees and tested it on 2025.
 
 ## What I found
@@ -117,13 +124,13 @@ I chose the strength of the weights on the validation year, not on the test year
 
 The same months as the plot at the top, before the AirCast idea (dashed line) and after it (blue line). The difference is easiest to see in early February 2025. The real level was 100-125 µg/m³, the model without weights predicted about 60-85, and with weights about 70-115. But sometimes it now goes too high, for example 115 when the real level was 68.
 
-Normal days didn't really change, but the most polluted days did, and those are the days when people need a warning the most. On validation the result was mixed: the winter error went up a little (12.36 to 12.60), because there the model was already predicting too high. There were only 32 very polluted days in the test, so I want to check this again this winter with the bot's forecasts. The Telegram bot uses the model with weights.
+Normal days didn't really change, but the most polluted days did. On validation the result was mixed: the winter error went up a little (12.36 to 12.60), because there the model was already predicting too high. There were only 32 very polluted days in the test, so I want to check this again this winter with the bot's forecasts. The Telegram bot uses the model with weights.
 
 ## CHP-2 tracker
 
 I can't just compare the winters before and after the switch. One winter could be warmer, windier or have better air mixing. So I made a second model that only knows the weather and the calendar, with no past PM2.5. Trained on the coal years, it says how polluted a winter would be with that weather.
 
-To see how wrong this model normally is, I left out one winter at a time, trained on the rest and predicted the hidden winter. For 5 of 6 winters, the average was off by about 10% or less. For 2020-21 it was off by 38%, and I still don't know why. So a 10% drop after the switch could easily be a model error, and even a bigger drop wouldn't prove on its own that it came from CHP-2. When the switch happens, I'll run `src/chp2_tracker.py` every week. This question matters not only for Almaty: many cities in Central Asia and other places still heat with coal and plan the same switch to gas, and an honest way to measure the real effect could be useful for them too.
+To see how wrong this model normally is, I left out one winter at a time, trained on the rest and predicted the hidden winter. For 5 of 6 winters, the average was off by about 10% or less. For 2020-21 it was off by 38%, and I still don't know why. So a 10% drop after the switch could easily be a model error, and even a bigger drop wouldn't prove on its own that it came from CHP-2. When the switch happens, I'll run `src/chp2_tracker.py` every week. Other cities that heat with coal could use the same idea.
 
 ## Telegram bot
 
@@ -131,7 +138,7 @@ I made the bot first of all for my dad. Sometimes the air in Almaty gets very di
 
 [@ala_smogfor_bot](https://t.me/ala_smogfor_bot) sends tomorrow's forecast every evening (planned for 22:00 Almaty time, but GitHub sometimes starts it a few hours later), in Russian, with the US EPA level and short advice. GitHub Actions downloads fresh AirGradient and weather data and makes the forecast. A small Flask server on PythonAnywhere sends it to everyone who pressed /start. Subscribers' chat IDs stay on the server, not on GitHub. The bot uses a real weather forecast for tomorrow, so it doesn't have the "perfect weather" advantage from the tests.
 
-I also found a problem in the bot. The model's most important feature is PM2.5 at 23:00, but the bot runs at 22:00, when this hour isn't measured yet. So in every live forecast this value was empty. I checked what this does on the test year: the error goes from 6.39 to 8.72, almost as bad as "tomorrow = today". Now the bot uses the last measured hour instead (usually 21:00). With data only until 21:00, the error on the test year is 6.34, so almost nothing is lost. This only changes the live forecasts, not the test results above.
+I also found a problem in the bot. The model's most important feature is PM2.5 at 23:00, but the bot runs at 22:00, so this value was always empty, and on the test year the error would grow from 6.39 to 8.72. Now the bot uses the last measured hour (usually 21:00), and the error stays at 6.34.
 
 There is also a simple Streamlit demo (`streamlit run app.py`). For now it only runs on my computer.
 
@@ -147,9 +154,7 @@ There is also a simple Streamlit demo (`streamlit run app.py`). For now it only 
 
 ## What I focused on
 
-This project is not unique. When I started, I didn't know how many people had made air quality forecasts for Almaty, I only found out during the project. So I tried to add depth. The main difference is the data: my model is trained on about 5 years of measurements from a reference-grade monitor (the US Consulate station), which is much more accurate than cheap sensors. I tried to take many factors into account: weather, boundary layer height, the calendar and heating. I tried to avoid common mistakes: I didn't shuffle the days, I compared with simple forecasts and tested on a year the model never saw. And the bot really works every day.
-
-I also compared with CAMS, a large global forecast from Copernicus. It is close in summer but misses the worst winter days by almost 50 µg/m³. I looked at the polluted days and not only at the average, and that's how I found that my first model was worse than "tomorrow = today" on the days that matter most. I fixed it with an idea from AirCast, a paper from MBZUAI. And I tried to be clear about what the results can't show: SHAP shows how the model works, not what causes smog, and the CHP-2 tracker shows how big a change has to be before it means anything.
+This project is not unique. When I started, I didn't know how many people had made air quality forecasts for Almaty, I only found out during the project. The main difference is the data: my model is trained on about 5 years of measurements from a reference-grade monitor (the US Consulate station), which is much more accurate than cheap sensors.
 
 ## What I learned
 
@@ -157,9 +162,7 @@ In my flappy-bird project I wrote a neural network from scratch, and the game ma
 
 - I learned a new kind of model: decision trees and LightGBM.
 - I worked with real, messy data: missing hours, a time zone change, a station that stopped, and cheap sensors I had to calibrate.
-- I learned to test honestly. A simple guess like "tomorrow = today" can be hard to beat, and it was even more accurate than CAMS. Settings have to be chosen on validation, not on test.
-- The average error can hide the days that matter most. My model looked good on average but missed heavy smog, until I tried an idea from a research paper.
-- Some problems only show up when the model really runs every day, like the missing 23:00 value in the bot.
+- My model looked good on average, but on the worst days it was worse than "tomorrow = today". I only saw this because I checked the polluted days separately.
 
 ## Next steps
 
