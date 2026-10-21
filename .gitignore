@@ -10,4 +10,4 @@ __pycache__/
 data/raw/*.csv
 data/processed/*.csv
 data/processed/*.parquet
-models/
+
