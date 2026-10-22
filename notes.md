@@ -184,6 +184,12 @@ I also had to choose how strong this penalty should be. With a strong penalty th
 On the test set the error went down from 6.84 to 6.39, and on the 10% dirtiest days from 24.9 to 19.5. On the AirGradient days it went from 6.98 to 6.34. On validation the overall error got slightly worse, from 8.87 to 9.03, but on the dirtiest days it improved from 15.95 to 14.84.
 
 So the model now underpredicts real pollution less. The Telegram bot uses the new model, and the demo app still uses the old one.
+## Day 20 — Weather timeout
+
+Today the bot didn't send the forecast. The log showed that the problem wasn't in my code: the weather site (Open-Meteo) didn't answer in time. Before, the bot asked only once and waited 30 seconds, and if there was no answer, it stopped.
+
+Now it tries 3 times, waits up to 60 seconds each time, and pauses 30 seconds between tries. It only fails if all three tries don't work.
+
 ## Day 21 — The 23:00 problem in the bot
 
 The most important feature in my model is PM2.5 at 23:00, the last hour of the day. In training this value was always there. But the bot runs at 22:00, so at that moment 23:00 hasn't happened yet, and the value was empty in every live forecast.
@@ -194,13 +200,8 @@ I tested how bad it was: on the test year, with this value empty, the error woul
 
 Now the bot takes the last hour that is already measured (usually 21:00) instead of 23:00. With this, the error on the test year is 6.34, almost the same as before.
 
-This only changes the live bot. The test results and figures in the README were not affected, because there all the data was already there
+This only changes the live bot. The test results and figures in the README were not affected, because there all the data was already there.
 
-## Day 20 — Weather timeout
-
-Today the bot didn't send the forecast. The log showed that the problem wasn't in my code: the weather site (Open-Meteo) didn't answer in time. Before, the bot asked only once and waited 30 seconds, and if there was no answer, it stopped.
-
-Now it tries 3 times, waits up to 60 seconds each time, and pauses 30 seconds between tries. It only fails if all three tries don't work.
 ## Day 22 — BLH × wind (idea from a paper)
 
 I read Tursumbayeva et al. (2022). They used weather balloon data for Almaty and found that the worst smog days are calm days with a low boundary layer. They multiply the two, BLH × wind speed, and call it the ventilation coefficient: if it's small, the smog stays over the city.
@@ -209,4 +210,4 @@ My model had BLH and wind as separate features, but not their product. So I adde
 
 It didn't help. On validation the error got worse in every version, for example 9.03 → 9.63 with tomorrow's BLH × wind. On the test some numbers went a bit up and some a bit down, but I choose by validation, so I didn't add the feature.
 
-I think the reason is that LightGBM is made of trees, and a tree can already combine the two: first split by BLH, then by wind. So the product didn't give it anything new.
+I think the reason is that LightGBM is made of trees, and a tree can already combine the two: first split by BLH, then by wind. So the product didn't give it anything new
