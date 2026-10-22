@@ -184,6 +184,17 @@ I also had to choose how strong this penalty should be. With a strong penalty th
 On the test set the error went down from 6.84 to 6.39, and on the 10% dirtiest days from 24.9 to 19.5. On the AirGradient days it went from 6.98 to 6.34. On validation the overall error got slightly worse, from 8.87 to 9.03, but on the dirtiest days it improved from 15.95 to 14.84.
 
 So the model now underpredicts real pollution less. The Telegram bot uses the new model, and the demo app still uses the old one.
+## Day 21 — The 23:00 problem in the bot
+
+The most important feature in my model is PM2.5 at 23:00, the last hour of the day. In training this value was always there. But the bot runs at 22:00, so at that moment 23:00 hasn't happened yet, and the value was empty in every live forecast.
+
+The model still gave a number, so I didn't see any error. I only noticed it when I checked which data the bot actually gets.
+
+I tested how bad it was: on the test year, with this value empty, the error would go from 6.39 to 8.72. That's almost the same as just saying "tomorrow = today", so the model was losing most of its advantage.
+
+Now the bot takes the last hour that is already measured (usually 21:00) instead of 23:00. With this, the error on the test year is 6.34, almost the same as before.
+
+This only changes the live bot. The test results and figures in the README were not affected, because there all the data was already there
 
 ## Day 20 — Weather timeout
 
