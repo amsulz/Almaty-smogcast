@@ -155,6 +155,10 @@ There is also a simple Streamlit demo (`streamlit run app.py`). For now it only 
 ## What I focused on
 
 This project is not unique. When I started, I didn't know how many people had made air quality forecasts for Almaty, I only found out during the project. The main difference is the data: my model is trained on about 5 years of measurements from a reference-grade monitor (the US Consulate station), which is much more accurate than cheap sensors.
+Related work:
+AirCast (Nedungadi et al., 2025, MBZUAI) forecasts air pollution for the Middle East and North Africa. In their tests, "tomorrow = today" was also better than raw CAMS. I found this paper after I started my project and borrowed one idea from it: more weight for rare polluted days.
+Kerimray et al. (2020) studied Almaty's monitoring stations for 2013-2018. PM2.5 is highest in winter, mostly because of coal burning for heating, with weak wind and temperature inversions making it worse. PM2.5 was also higher in the lower parts of the city. I saw the same thing in the AirGradient sensors: in winter the north (lower) was about twice as polluted as the south near the mountains.
+Tursumbayeva et al. (2022) used one year of weather balloon data. In winter the boundary layer was about 393 m and PM2.5 about 94 µg/m³, in summer about 1970 m and 9.9 µg/m³. The most polluted days had a shallow boundary layer, calm wind and weak ventilation. This is why BLH is one of the strongest features in my model. I also tried BLH × wind as a feature, but the validation error got worse (9.03 → 9.63), so I didn't add it.
 
 ## What I learned
 
