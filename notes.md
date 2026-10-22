@@ -211,3 +211,12 @@ My model had BLH and wind as separate features, but not their product. So I adde
 It didn't help. On validation the error got worse in every version, for example 9.03 → 9.63 with tomorrow's BLH × wind. On the test some numbers went a bit up and some a bit down, but I choose by validation, so I didn't add the feature.
 
 I think the reason is that LightGBM is made of trees, and a tree can already combine the two: first split by BLH, then by wind. So the product didn't give it anything new
+## Day 23 — The bot broke because of a new pandas version
+
+Even after the timeout fix, the bot didn't send the forecast. This time the log showed a different error: "assignment destination is read-only", in the line that fills the 23:00 value with the last measured hour.
+
+On my computer the same code worked. The difference was the pandas version: GitHub installs the newest one every time, and it had just updated to pandas 3.1.0, while I had 3.0.6. I installed 3.1.0 and got the same error, so that was the reason.
+
+I rewrote this one line in a different way. The result is the same on both versions (the forecast for 23.10 was 11 µg/m³ with both), and after that the bot sent the forecast again.
+
+What I learned: code can break without any change from me, just because a library updated. In the future I could fix the library versions in the workflow, so GitHub always uses the same ones as my computer.
