@@ -57,7 +57,7 @@ def load_data():
     # before, it was empty, now we take the last measured hour
     pm = hourly.set_index("time").pm25.dropna()
     last_day = daily.date == pm.index.max().normalize()
-    daily.loc[last_day, "pm25_lag1h"] = daily.loc[last_day, "pm25_lag1h"].fillna(pm.iloc[-1])
+    daily["pm25_lag1h"] = daily.pm25_lag1h.mask(last_day & daily.pm25_lag1h.isna(), pm.iloc[-1])
     return hourly, daily
 
 
