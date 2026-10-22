@@ -190,3 +190,12 @@ So the model now underpredicts real pollution less. The Telegram bot uses the ne
 Today the bot didn't send the forecast. The log showed that the problem wasn't in my code: the weather site (Open-Meteo) didn't answer in time. Before, the bot asked only once and waited 30 seconds, and if there was no answer, it stopped.
 
 Now it tries 3 times, waits up to 60 seconds each time, and pauses 30 seconds between tries. It only fails if all three tries don't work.
+## Day 22 — BLH × wind (idea from a paper)
+
+I read Tursumbayeva et al. (2022). They used weather balloon data for Almaty and found that the worst smog days are calm days with a low boundary layer. They multiply the two, BLH × wind speed, and call it the ventilation coefficient: if it's small, the smog stays over the city.
+
+My model had BLH and wind as separate features, but not their product. So I added it, and tried three versions: for today, for tomorrow, and for tomorrow night.
+
+It didn't help. On validation the error got worse in every version, for example 9.03 → 9.63 with tomorrow's BLH × wind. On the test some numbers went a bit up and some a bit down, but I choose by validation, so I didn't add the feature.
+
+I think the reason is that LightGBM is made of trees, and a tree can already combine the two: first split by BLH, then by wind. So the product didn't give it anything new.
