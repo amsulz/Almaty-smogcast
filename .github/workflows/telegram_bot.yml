@@ -24,7 +24,7 @@ jobs:
         with:
           python-version: "3.12"
       # only what the bot needs, the full requirements.txt has jupyter, shap etc.
-      - run: pip install pandas numpy requests python-dotenv scikit-learn lightgbm
+      - run: pip install pandas==3.0.6 numpy==2.5.4 requests==2.34.2 python-dotenv==1.2.4 scikit-learn==1.9.1 lightgbm==4.7.0
       # data/ is not on GitHub, so download it first. The model is in models/lgbm.txt, no training here
       - run: python src/download_openaq.py
       - run: python src/download_cams.py
