@@ -137,6 +137,7 @@ To see how wrong this model normally is, I left out one winter at a time, traine
 I made the bot first of all for my dad. Sometimes the air in Almaty gets very dirty, and I wanted him to be able to plan his walks for the next day, without worrying that a walk, which is usually good for health, could hurt his lungs. Now not only my dad but also my relatives get a message every evening about how polluted the air will be tomorrow.
 
 [@ala_smogfor_bot](https://t.me/ala_smogfor_bot) sends tomorrow's forecast every evening (planned for 22:00 Almaty time, but GitHub sometimes starts it a few hours later), in Russian, with the US EPA level and short advice. GitHub Actions downloads fresh AirGradient and weather data and makes the forecast. A small Flask server on PythonAnywhere sends it to everyone who pressed /start. Subscribers' chat IDs stay on the server, not on GitHub. The bot uses a real weather forecast for tomorrow, so it doesn't have the "perfect weather" advantage from the tests.
+![Telegram bot messages](results/figures/bot_message.jpg)
 
 I also found a problem in the bot. The model's most important feature is PM2.5 at 23:00, but the bot runs at 22:00, so this value was always empty, and on the test year the error would grow from 6.39 to 8.72. Now the bot uses the last measured hour (usually 21:00), and the error stays at 6.34.
 
