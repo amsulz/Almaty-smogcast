@@ -91,9 +91,9 @@ Winter is about 6 times dirtier than summer. The worst months are December, Janu
 
 ![Daily cycle](results/figures/daily_cycle.png)
 
-At first, I thought that the worst air would be in the evenings, but in winter the peak is around 12:00-16:00. The cleanest time is early morning, around 6:00. Nearby Clarity sensors show the same pattern. In summer, the air is clean all day and the line is almost flat. I don't know the reason yet. Maybe daytime winds carry polluted air from the lower parts of the city, but I haven't checked this.
+At first, I thought that the worst air would be in the evenings, but in winter the peak is around 12:00-16:00. The cleanest time is early morning, around 6:00. Nearby Clarity sensors show the same pattern. In summer, the air is clean all day and the line is almost flat. I don't know the reason yet. Maybe daytime winds carry polluted air from the lower parts of the city, but I haven't checked this. After I shared the project, researchers from Almaty Air Initiative told me that in their data since 2023 the daytime peak is typical only for the south of the city. In most of the city, especially in the more polluted areas, the peaks are in the morning and in the evening. So this pattern is only true for the area around the station.
 
-This surprised me the most. Traffic jams in Almaty are usually from 17:00 to 20:00, when there are more cars, but the winter smog peaks at 12:00-16:00. There is also no difference in smog between weekdays and weekends. So maybe cars are not the main reason for winter smog, but I can't prove it with my data.
+This surprised me the most. Traffic jams in Almaty are usually from 17:00 to 20:00, when there are more cars, but the winter smog peaks at 12:00-16:00. There is also no difference in smog between weekdays and weekends. Near the station, cars don't seem to be the main reason for winter smog, but with data from one point I can't say this for the whole city.
 
 ![PM2.5 and boundary layer height](results/figures/pm25_vs_blh.png)
 
@@ -179,6 +179,7 @@ In my flappy-bird project I wrote a neural network from scratch, and the game ma
 - Test the model with real weather forecasts instead of the archive.
 - Save the bot's forecasts every day and check how good they really are this winter.
 - Make forecasts for different districts using AirGradient sensors around the city.
+- Compare my 0.69 factor with the corrected sensor data from Almaty Air Initiative (they offered access to their API).
 - Run the CHP-2 tracker after the switch to gas.
 
 ## How to run
