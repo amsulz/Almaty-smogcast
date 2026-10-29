@@ -18,6 +18,8 @@ jobs:
       # the server on PythonAnywhere that sends the forecast to all subscribers
       BOT_SERVER_URL: ${{ secrets.BOT_SERVER_URL }}
       SERVER_SECRET: ${{ secrets.SERVER_SECRET }}
+      # corrected data from Almaty Air Initiative
+      AAI_API_KEY: ${{ secrets.AAI_API_KEY }}
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v6
