@@ -4,12 +4,25 @@ import pandas as pd
 from config import EMBASSY_END, PROCESSED_DIR, RAW_DIR, START_DATE
 
 
+def scale_to_aai(ag, aai):
+    # AirGradient gives the hours, AAI Medeu gives the level of each day
+    day = ag.time.dt.normalize()
+    factor = (aai.set_index("date").pm25 / ag.groupby(day).pm25.mean()).dropna()
+    # a day without AAI data (usually today) gets the median factor of the last 7 days
+    factor = day.map(factor).fillna(factor.tail(7).median())
+    return ag.assign(pm25=ag.pm25 * factor.values)
+
+
 def main():
     pm = pd.read_csv(RAW_DIR / "pm25_openaq.csv", parse_dates=["time"])
     # after the embassy stopped, PM2.5 comes from AirGradient sensors (download_airgradient.py)
     airgradient_file = RAW_DIR / "pm25_airgradient.csv"
     if airgradient_file.exists():
         ag = pd.read_csv(airgradient_file, parse_dates=["time"])
+        aai_file = RAW_DIR / "pm25_aai_medeu.csv"
+        if aai_file.exists():
+            ag = scale_to_aai(ag, pd.read_csv(aai_file, parse_dates=["date"]))
+            print("AirGradient scaled to AAI Medeu")
         pm = pd.concat([pm[pm.time < EMBASSY_END], ag[ag.time >= EMBASSY_END]])
     weather = pd.read_csv(RAW_DIR / "weather.csv", parse_dates=["time"])
     cams = pd.read_csv(RAW_DIR / "cams.csv", parse_dates=["time"])

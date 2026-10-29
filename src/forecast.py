@@ -70,3 +70,13 @@ def predict_tomorrow(model, daily):
     today = daily.dropna(subset=["pm25_mean24h"]).iloc[-1]
     pred = model.predict(today[feature_columns(daily)].to_frame().T.astype(float))[0]
     return today, today.date + pd.Timedelta(days=1), pred
+
+
+def recent_bias(model, daily, days=30):
+    # the model learned the air of 2020-2025, but summer 2026 was cleaner and it kept
+    # predicting about 3 too high. So the bot takes off its mean error of the last 30 days
+    known = daily.dropna(subset=["pm25_mean24h", "target"]).tail(days)
+    if len(known) < 10:
+        return 0.0
+    pred = model.predict(known[feature_columns(daily)].astype(float))
+    return float((pred - known.target).mean())

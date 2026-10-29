@@ -20,9 +20,10 @@ import requests
 from dotenv import load_dotenv
 
 import build_dataset
+import download_aai
 import download_airgradient
 import download_weather
-from forecast import load_data, load_model, predict_tomorrow
+from forecast import load_data, load_model, predict_tomorrow, recent_bias
 
 API = "https://api.telegram.org/bot{token}/{method}"
 # US EPA PM2.5 scale (2024), 24h average. For the message I use the full official scale,
@@ -72,11 +73,15 @@ def print_chat_ids(token):
 def make_message():
     download_weather.main()
     download_airgradient.main()
+    download_aai.main()
     build_dataset.main()
 
     _, daily = load_data()
-    # the model with AirCast weights: for health it's worse to miss a dirty day than to be a bit off on a clean one
-    _, tomorrow, pred = predict_tomorrow(load_model("lgbm_weighted.txt"), daily)
+    model = load_model("lgbm_bot.txt")
+    _, tomorrow, pred = predict_tomorrow(model, daily)
+    bias = recent_bias(model, daily)
+    print(f"model {pred:.1f}, mean error of the last 30 days {bias:+.1f}")
+    pred = max(pred - bias, 0)
     icon, name, advice = level(pred)
     # short, the scale was sent once with --scale
     return (f"Прогноз на завтра ({tomorrow:%d.%m}): {pred:.0f} мкг/м³, {icon} {name}.\n"

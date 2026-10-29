@@ -1,11 +1,12 @@
 """Baseline, CAMS, linear regression, LightGBM and LightGBM with AirCast weights. Results go to results/metrics.csv"""
 import lightgbm as lgb
+import pandas as pd
 from sklearn.impute import SimpleImputer
 from sklearn.linear_model import LinearRegression
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 
-from config import MODELS_DIR
+from config import EMBASSY_END, MODELS_DIR
 from evaluate import save_metrics, save_predictions
 from features import airgradient_part, feature_columns, make_features, split_by_time
 
@@ -102,6 +103,13 @@ def main():
     save_metrics("LightGBM + AirCast weights", "test", test.target, pred_w, note="trained on train+val")
     save_predictions(test.date, pred_w, "lightgbm_weighted")
     final_w.save_model(str(MODELS_DIR / "lgbm_weighted.txt"))
+
+    # model for the bot: the test is done, so now it can learn from 2025 too.
+    # without weights, on AAI data the weighted model predicted too high
+    # the last embassy day is left out, its target (the next day) is already AirGradient
+    embassy_days = daily[daily.date < pd.Timestamp(EMBASSY_END) - pd.Timedelta(days=1)]
+    bot = lgb.train(LGB_PARAMS, lgb.Dataset(embassy_days[cols], embassy_days.target), num_boost_round=best)
+    bot.save_model(str(MODELS_DIR / "lgbm_bot.txt"))
 
     # 6. one more check on days after the embassy stopped. The model never saw them,
     # but the "real" PM2.5 here is from cheap AirGradient sensors, so it's less exact
