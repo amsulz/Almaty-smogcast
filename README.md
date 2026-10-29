@@ -154,7 +154,7 @@ There is also a simple Streamlit demo (`streamlit run app.py`). For now it only 
 - I have no real traffic data, only weekdays, weekends and holidays.
 - The test is only one year, with 32 very polluted days, so small differences between the models could be luck.
 
-## What I focused on
+## How this project is different
 
 This project is not unique. When I started, I didn't know how many people had made air quality forecasts for Almaty, I only found out during the project. The main difference is the data: my model is trained on about 5 years of measurements from a reference-grade monitor (the US Consulate station), which is much more accurate than cheap sensors.
 
