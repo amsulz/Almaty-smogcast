@@ -55,7 +55,7 @@ def main():
     print(f"PM2.5 sensor id: {sensor_id}")
 
     rows = []
-    # One year per request window, paginated inside
+    # one year at a time, and inside a year page by page
     for year in range(int(START_DATE[:4]), date.today().year + 1):
         page = 1
         while True:

@@ -1,4 +1,4 @@
-"""Download the CAMS global PM2.5 forecast for Almaty via Open-Meteo. This is the benchmark to beat.
+"""Download the CAMS global PM2.5 forecast for Almaty via Open-Meteo. my model has to be better than this
 
 CAMS global data on Open-Meteo starts in August 2022. No API key needed.
 """
@@ -17,7 +17,7 @@ def main():
     chunks = []
     start = CAMS_START
     while start < date.today():
-        # Request one year at a time to keep responses small
+        # one year per request, otherwise the answer is too big
         end = min(start + timedelta(days=365), date.today())
         params = {
             "latitude": LATITUDE,

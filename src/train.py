@@ -23,11 +23,13 @@ LGB_PARAMS = {
 
 # Without weights the model pulls predictions toward common values and underpredicts heavy smog.
 # This gives rare days a bigger penalty for errors, so the model can't ignore them.
+# e.g. 23 µg goes to bin 2 (20-29), 105 to bin 10. bin 2 is very common and bin 10 is rare,
+# so days from bin 10 get a bigger weight. power 0.1 makes the difference softer
 def rarity_weights(target, bin_size=10, power=0.1):
-    bins = (target // bin_size).astype(int)    # bin number, e.g. 23 // 10 = 2 (20-29 µg), 105 // 10 = 10 (100-109 µg)
-    counts = bins.map(bins.value_counts())     # how often each bin happens: bin 2 is very common, bin 10 is very rare
-    w = (1 / counts) ** power                  # rare bin = bigger penalty for errors, power 0.1 makes it softer
-    return w / w.mean()                        # average weight = 1
+    bins = (target // bin_size).astype(int)
+    counts = bins.map(bins.value_counts())
+    w = (1 / counts) ** power
+    return w / w.mean()  # average weight = 1
 
 
 def main():
