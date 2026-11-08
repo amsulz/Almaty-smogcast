@@ -220,3 +220,19 @@ On my computer the same code worked. The difference was the pandas version: GitH
 I rewrote this one line in a different way. The result is the same on both versions (the forecast for 23.10 was 11 µg/m³ with both), and after that the bot sent the forecast again.
 
 What I learned: code can break without any change from me, just because a library updated. In the future I could fix the library versions in the workflow, so GitHub always uses the same ones as my computer.
+
+## Day 24 — First weeks of the heating season
+
+I compared what the bot sent with the real level from Almaty Air Initiative (Medeu) for 28.10–07.11. The mean error was 8.7, a bit worse than "tomorrow = today" (7.9).
+
+Most of it came from 28–31.10: the real level was 38–51, and the bot said 26–33. In the six years the model learned from, the end of October was usually 10–35, and the heavy smog started in November. This year the week 25.10–01.11 was the coldest of all years in my data (5.6 °C on average) and had 5 days with wind below 2 m/s. In 2020–2025 this week had no such days at all. So the heating started early, and the smoke had nowhere to go. The model has seen cold and calm days before, but never together at the end of October.
+
+On 02.11 it was the opposite: the wind came back, the air got two times cleaner in one day (53 → 25), and the bot said 37. Simple "tomorrow = today" was even worse that day.
+
+With the real weather instead of the forecast, the same model has an error of 5.2 on these weeks. So more than half of the live error comes from the weather forecast, not from the model.
+
+I also tried two things, and both didn't help, so I didn't add them:
+- correcting the bias over 7 days instead of 30 (5.62 vs 5.49 from 15.10)
+- new features: mean temperature of the last 3 and 7 days, and how much wind and BLH change tomorrow. Some numbers went down, others went up (test 6.48 → 6.69–6.78).
+
+From 04.11 the error is back to 1–7. I think the only real fix is time: next year I can retrain with 2026, and the model will have seen one early winter.
