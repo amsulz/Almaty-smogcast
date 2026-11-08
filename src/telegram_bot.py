@@ -23,6 +23,7 @@ import build_dataset
 import download_aai
 import download_airgradient
 import download_weather
+import live_archive
 from forecast import load_data, load_model, predict_tomorrow, recent_bias
 
 API = "https://api.telegram.org/bot{token}/{method}"
@@ -81,7 +82,9 @@ def make_message():
     _, tomorrow, pred = predict_tomorrow(model, daily)
     bias = recent_bias(model, daily)
     print(f"model {pred:.1f}, mean error of the last 30 days {bias:+.1f}")
+    model_pred = pred
     pred = max(pred - bias, 0)
+    live_archive.save(tomorrow, pred, model_pred, bias)
     icon, name, advice = level(pred)
     # short, the scale was sent once with --scale
     return (f"Прогноз на завтра ({tomorrow:%d.%m}): {pred:.0f} мкг/м³, {icon} {name}.\n"
