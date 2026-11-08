@@ -152,6 +152,7 @@ There is also a simple Streamlit demo (`streamlit run app.py`). For now it only 
 - Almaty Air Initiative told me that raw AirGradient sensors usually read about 1.6 times higher than reference monitors. This is close to the 1.45 I found myself, but one factor for all days is too simple: the error depends on humidity. They suggested the [EPA correction](https://www.airgradient.com/blog/epa-correction-and-airgradient/), which I want to try next.
 - I'm not fully sure where the US station is: OpenAQ puts it about 3 km from the consulate's address. I chose the AirGradient sensors around the OpenAQ point.
 - The forecast is for one point in the center. But AirGradient sensors show that in winter the north of the city can be about twice as polluted as the south near the mountains.
+- The bot misses sudden changes. At the end of October 2026 the heating season started with a week that was colder and calmer than any end of October in my data, and the bot was 7-18 µg/m³ too low for four days. With the real weather instead of the forecast, the error on these weeks is 5.2 instead of 8.7, so a big part of the live error comes from the weather forecast (details in notes.md, Day 24).
 - I have no real traffic data, only weekdays, weekends and holidays.
 - The test is only one year, with 32 very polluted days, so small differences between the models could be luck.
 
