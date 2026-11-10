@@ -2,11 +2,12 @@
 import time
 
 import lightgbm as lgb
+import numpy as np
 import pandas as pd
 import requests
 
 from config import LATITUDE, LONGITUDE, MODELS_DIR, TIMEZONE
-from features import feature_columns, load_hourly, make_features
+from features import load_hourly, make_features
 
 WEATHER = {
     "temperature_2m": "temp",
@@ -15,6 +16,8 @@ WEATHER = {
     "surface_pressure": "pressure",
     "precipitation": "precipitation",
     "boundary_layer_height": "blh",
+    "temperature_850hPa": "temp_850",
+    "temperature_700hPa": "temp_700",
 }
 
 
@@ -65,18 +68,25 @@ def load_model(name="lgbm.txt"):
     return lgb.Booster(model_file=str(MODELS_DIR / name))
 
 
-def predict_tomorrow(model, daily):
+def predict(model, rows, log=False):
+    # the model file remembers its own columns, so the old models and the new one all work here
+    pred = model.predict(rows[model.feature_name()].astype(float))
+    # log=True for a model that learned log(1 + PM2.5), see train.py step 6
+    return np.expm1(pred) if log else pred
+
+
+def predict_tomorrow(model, daily, log=False):
     # "today" = the last day where we have enough PM2.5 measurements
     today = daily.dropna(subset=["pm25_mean24h"]).iloc[-1]
-    pred = model.predict(today[feature_columns(daily)].to_frame().T.astype(float))[0]
+    pred = predict(model, today.to_frame().T, log)[0]
     return today, today.date + pd.Timedelta(days=1), pred
 
 
-def recent_bias(model, daily, days=30):
+def recent_bias(model, daily, days=30, log=False):
     # the model learned the air of 2020-2025, but summer 2026 was cleaner and it kept
     # predicting about 3 too high. So the bot takes off its mean error of the last 30 days
     known = daily.dropna(subset=["pm25_mean24h", "target"]).tail(days)
     if len(known) < 10:
         return 0.0
-    pred = model.predict(known[feature_columns(daily)].astype(float))
+    pred = predict(model, known, log)
     return float((pred - known.target).mean())

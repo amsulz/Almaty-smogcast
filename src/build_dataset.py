@@ -51,6 +51,8 @@ def main():
         "wind_direction_10m": "wind_dir",
         "surface_pressure": "pressure",
         "boundary_layer_height": "blh",
+        "temperature_850hPa": "temp_850",
+        "temperature_700hPa": "temp_700",
     })
 
     print(f"\nrows: {len(df)}")

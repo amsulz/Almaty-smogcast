@@ -79,8 +79,9 @@ def make_message():
 
     _, daily = load_data()
     model = load_model("lgbm_bot.txt")
-    _, tomorrow, pred = predict_tomorrow(model, daily)
-    bias = recent_bias(model, daily)
+    # this model has the inversion features and learned the log of PM2.5 (train.py step 6)
+    _, tomorrow, pred = predict_tomorrow(model, daily, log=True)
+    bias = recent_bias(model, daily, log=True)
     print(f"model {pred:.1f}, mean error of the last 30 days {bias:+.1f}")
     model_pred = pred
     pred = max(pred - bias, 0)

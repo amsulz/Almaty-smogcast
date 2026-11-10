@@ -1,5 +1,7 @@
-"""Baseline, CAMS, linear regression, LightGBM and LightGBM with AirCast weights. Results go to results/metrics.csv"""
+"""Baseline, CAMS, linear regression, LightGBM, LightGBM with AirCast weights and LightGBM with inversion.
+Results go to results/metrics.csv"""
 import lightgbm as lgb
+import numpy as np
 import pandas as pd
 from sklearn.impute import SimpleImputer
 from sklearn.linear_model import LinearRegression
@@ -104,14 +106,35 @@ def main():
     save_predictions(test.date, pred_w, "lightgbm_weighted")
     final_w.save_model(str(MODELS_DIR / "lgbm_weighted.txt"))
 
+    # 6. LightGBM + inversion features, and it learns log(1 + PM2.5) instead of PM2.5.
+    # With the log an error of 10 on a clean day costs more than an error of 10 on a smog day,
+    # like in real life: 5 instead of 15 is a big miss, 90 instead of 100 is not
+    cols_inv = feature_columns(daily, inversion=True)
+    model_inv = lgb.train(
+        LGB_PARAMS,
+        lgb.Dataset(train[cols_inv], np.log1p(train.target)),
+        num_boost_round=3000,
+        valid_sets=[lgb.Dataset(val[cols_inv], np.log1p(val.target))],
+        callbacks=[lgb.early_stopping(100, verbose=False)],
+    )
+    best_inv = model_inv.best_iteration
+    # expm1 turns the log back into µg/m³
+    save_metrics("LightGBM + inversion + log", "val", val.target,
+                 np.expm1(model_inv.predict(val[cols_inv], num_iteration=best_inv)))
+    final_inv = lgb.train(LGB_PARAMS, lgb.Dataset(train_val[cols_inv], np.log1p(train_val.target)),
+                          num_boost_round=best_inv)
+    pred_inv = np.expm1(final_inv.predict(test[cols_inv]))
+    save_metrics("LightGBM + inversion + log", "test", test.target, pred_inv, note="trained on train+val")
+    save_predictions(test.date, pred_inv, "lightgbm_inversion")
+
     # model for the bot: the test is done, so now it can learn from 2025 too.
-    # without weights, on AAI data the weighted model predicted too high
     # the last embassy day is left out, its target (the next day) is already AirGradient
     embassy_days = daily[daily.date < pd.Timestamp(EMBASSY_END) - pd.Timedelta(days=1)]
-    bot = lgb.train(LGB_PARAMS, lgb.Dataset(embassy_days[cols], embassy_days.target), num_boost_round=best)
+    bot = lgb.train(LGB_PARAMS, lgb.Dataset(embassy_days[cols_inv], np.log1p(embassy_days.target)),
+                    num_boost_round=best_inv)
     bot.save_model(str(MODELS_DIR / "lgbm_bot.txt"))
 
-    # 6. one more check on days after the embassy stopped. The model never saw them,
+    # 7. one more check on days after the embassy stopped. The model never saw them,
     # but the "real" PM2.5 here is from cheap AirGradient sensors, so it's less exact
     new = airgradient_part(daily)
     print(f"\nAirGradient days: {len(new)}")
@@ -124,6 +147,8 @@ def main():
     save_metrics("linear regression", "airgradient", new.target, linear.predict(new[cols]), note=note)
     save_metrics("LightGBM", "airgradient", new.target, final.predict(new[cols]), note=note)
     save_metrics("LightGBM + AirCast weights", "airgradient", new.target, final_w.predict(new[cols]), note=note)
+    save_metrics("LightGBM + inversion + log", "airgradient", new.target,
+                 np.expm1(final_inv.predict(new[cols_inv])), note=note)
 
 
 if __name__ == "__main__":

@@ -17,6 +17,11 @@ HOLIDAYS = [
 
 WEATHER_COLS = ["temp", "humidity", "wind", "pressure", "precipitation", "blh"]
 
+# inversion = the air higher up is warmer than the air at the ground, so the smog can't go up.
+# I measure it as temperature at 850 hPa (or 700 hPa) minus temperature at 2 m.
+# Normally it is negative (colder higher up), the closer to 0 or above, the stronger the lid
+INVERSION_COLS = ["inv850", "tmr_inv850", "tmr_inv850_max", "tmr_inv850_day", "tmr_inv700", "tmr_inv_change"]
+
 # a day needs at least this many hours of PM2.5, otherwise its mean is not trustworthy
 MIN_HOURS = 18
 
@@ -54,6 +59,8 @@ def add_calendar(daily, prefix=""):
 def make_daily(df):
     df = df.copy()
     df["date"] = df.time.dt.normalize()
+    df["inv850"] = df.temp_850 - df.temp
+    df["inv700"] = df.temp_700 - df.temp
 
     daily = df.groupby("date").agg(
         pm25=("pm25", "mean"),
@@ -68,6 +75,9 @@ def make_daily(df):
         blh=("blh", "mean"),
         blh_min=("blh", "min"),
         cams_pm25=("cams_pm25", "mean"),
+        inv850=("inv850", "mean"),
+        inv850_max=("inv850", "max"),
+        inv700=("inv700", "mean"),
     ).reset_index()
 
     daily.loc[daily.pm25_hours < MIN_HOURS, "pm25"] = None
@@ -76,6 +86,11 @@ def make_daily(df):
     night = df[(df.time.dt.hour >= 18) | (df.time.dt.hour < 6)]
     night = night.groupby("date").agg(blh_night=("blh", "mean"), wind_night=("wind", "mean"))
     daily = daily.merge(night, on="date", how="left")
+
+    # in the daytime the sun should break the inversion. if it stays even then, the day is bad
+    day = df[(df.time.dt.hour >= 11) & (df.time.dt.hour <= 17)]
+    day = day.groupby("date").agg(inv850_day=("inv850", "mean"))
+    daily = daily.merge(day, on="date", how="left")
     return daily
 
 
@@ -106,6 +121,11 @@ def make_features(df=None):
     daily["tmr_temp_change"] = daily.tmr_temp - daily.temp
     daily["tmr_pressure_change"] = daily.tmr_pressure - daily.pressure
 
+    # --- inversion tomorrow
+    for col in ["inv850", "inv850_max", "inv850_day", "inv700"]:
+        daily["tmr_" + col] = daily[col].shift(-1)
+    daily["tmr_inv_change"] = daily.tmr_inv850 - daily.inv850
+
     # --- target: mean PM2.5 tomorrow. And CAMS for tomorrow as the thing to beat
     daily["target"] = daily.pm25.shift(-1)
     daily["cams_tomorrow"] = daily.cams_pm25.shift(-1)
@@ -115,11 +135,16 @@ def make_features(df=None):
     return daily
 
 
-def feature_columns(daily):
+def feature_columns(daily, inversion=False):
     # everything except the answer, CAMS (benchmark, not a feature) and helper columns
     # pm25 is the same as pm25_mean24h, no need to have it twice
     drop = ["date", "target", "cams_tomorrow", "cams_pm25", "pm25_hours", "pm25"]
-    return [c for c in daily.columns if c not in drop]
+    # the inversion columns are only for the new model, the old models stay as they were
+    inv = [c for c in daily.columns if "inv" in c]
+    cols = [c for c in daily.columns if c not in drop + inv]
+    if inversion:
+        cols += INVERSION_COLS
+    return cols
 
 
 def split_by_time(daily):
