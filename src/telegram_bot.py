@@ -16,6 +16,7 @@ After the server is connected, --chat-id doesn't work any more (Telegram sends m
 import os
 import sys
 
+import pandas as pd
 import requests
 from dotenv import load_dotenv
 
@@ -24,6 +25,7 @@ import download_aai
 import download_airgradient
 import download_weather
 import live_archive
+from config import TIMEZONE
 from forecast import load_data, load_model, predict_tomorrow, recent_bias
 
 API = "https://api.telegram.org/bot{token}/{method}"
@@ -87,8 +89,11 @@ def make_message():
     pred = max(pred - bias, 0)
     live_archive.save(tomorrow, pred, model_pred, bias)
     icon, name, advice = level(pred)
+    # GitHub often starts the run a few hours late, after midnight. Then the forecast day
+    # has already started, and "завтра" in the message was wrong
+    when = "сегодня" if tomorrow.date() <= pd.Timestamp.now(tz=TIMEZONE).date() else "завтра"
     # short, the scale was sent once with --scale
-    return (f"Прогноз на завтра ({tomorrow:%d.%m}): {pred:.0f} мкг/м³, {icon} {name}.\n"
+    return (f"Прогноз на {when} ({tomorrow:%d.%m}): {pred:.0f} мкг/м³, {icon} {name}.\n"
             f"{advice}")
 
 

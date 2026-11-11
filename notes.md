@@ -236,3 +236,17 @@ I also tried two things, and both didn't help, so I didn't add them:
 - new features: mean temperature of the last 3 and 7 days, and how much wind and BLH change tomorrow. Some numbers went down, others went up (test 6.48 → 6.69–6.78).
 
 From 04.11 the error is back to 1–7. I think the only real fix is time: next year I can retrain with 2026, and the model will have seen one early winter.
+
+## Day 25 — The cleanest winter day, and the bot missed it
+
+For 11.11 the bot said 11 µg/m³ (moderate). The real level was 5.3 (clean). The error is 5.7, about the usual, but the number was two times too high and the category was wrong.
+
+I checked how rare this day was. In my data there are 585 days from November to February, and none of them was cleaner. The record before was 6.1 (05.11.2025). A normal November day is around 30.
+
+The reason was a cold front. It rained almost the whole day, at about 04:00 the wind turned west and got stronger, and the inversion of 8–9.11 was gone (BLH about 300 m instead of 60). At 04:00–06:00 the hourly PM2.5 was below 1.
+
+The model saw the rain and went down from 20 to 12.5, but not lower. I looked at its forecasts for the last 400 days: the lowest one is 7.1, and the real minimum is 3.6. So it can't say "very clean". The old model without the inversion features gives 15 for this day, so the new one was closer.
+
+I also noticed that the message came at 03:21 on 11.11 and still said "прогноз на завтра (11.11)". GitHub starts the run 2–7 hours late, in November always after midnight. I can't fix the delay from the repository, but now the bot writes "на сегодня" if the forecast day has already started.
+
+Not done yet: start the run from PythonAnywhere at 22:00 instead of the GitHub schedule, and check if the model can learn very clean days.
