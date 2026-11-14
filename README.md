@@ -17,7 +17,7 @@ CHP-2 is expected to switch from coal to gas by the end of 2026. I want to see w
 ## Questions and short answers
 
 1. **Can a simple model using local data predict tomorrow's PM2.5 better than the CAMS forecast?**
-   Yes, much better. On 2025, a year the model never saw, its average error was 6.4 µg/m³, compared with 10.2 for CAMS. Probably because my model only looks at one city, while CAMS is a global model with big cells, so it can't see what happens in one valley near the mountains. CAMS catches the patterns, but it strongly underestimates the values.
+   Yes, much better. On 2025, a year the model never saw, its average error was 6.0 µg/m³, compared with 10.2 for CAMS. Probably because my model only looks at one city, while CAMS is a global model with big cells, so it can't see what happens in one valley near the mountains. CAMS catches the patterns, but it strongly underestimates the values.
 2. **What matters most for smog: heating, traffic, or weather?**
    For my model, weather matters most. But there is no exact answer. Weather and heating are connected (when it's cold, people burn more coal), so a tree model can split the credit between them differently. And I had no real traffic data.
 3. **After CHP-2 switches to gas, does pollution go down because of the switch, or because the winter is warmer?**
@@ -33,7 +33,8 @@ Test year 2025 (314 days, January to mid-November). The model never saw these da
 | Linear regression | 9.55 | 23.28 |
 | "Tomorrow = today" | 8.83 | 22.61 |
 | LightGBM | 6.84 | 24.90 |
-| LightGBM + AirCast weights | **6.39** | **19.48** |
+| LightGBM + AirCast weights | 6.39 | 19.48 |
+| LightGBM + inversion + log target | **5.97** | **17.34** |
 
 - LightGBM's error is about a third lower than CAMS and about a quarter lower than "tomorrow = today".
 - But on the most polluted days (above 58 µg/m³), plain LightGBM was worse than just saying "tomorrow = today". The weights fixed this (see below).
@@ -47,7 +48,7 @@ Test year 2025 (314 days, January to mid-November). The model never saw these da
 - PM2.5: the US Consulate monitor in Almaty (US State Department program), downloaded from OpenAQ. The original data comes from AirNow. I use September 2020 to 14 November 2025, when it stopped. In the code I call it "embassy".
 - Weather: hourly historical data from Open-Meteo, including boundary layer height (BLH).
 - CAMS PM2.5 forecasts from the Open-Meteo air quality API, from August 2022. I only compare with them, the model doesn't use them.
-- After the station stopped: 7 AirGradient sensors within 1.6 km of it. I take their median, so one broken sensor has less effect, and scale it by 0.69 (see Limitations).
+- After the station stopped: 7 AirGradient sensors within 1.6 km of it. I take their median, so one broken sensor has less effect, and scale it by 0.69 (see Limitations). Since the end of October 2026 the bot takes the level of each day from the corrected data of Almaty Air Initiative (Medeu district) instead of this factor.
 
 **Problems with the data**
 
@@ -65,6 +66,7 @@ At the end of each day (23:00), the model predicts the average PM2.5 for tomorro
 - weather today and tomorrow: temperature, wind, humidity, pressure, rain, BLH, and also night-time BLH and wind, because inversions happen at night
 - weather change: a big drop in temperature or a change in pressure often means a cold front, which can clean the air
 - calendar: day of the week, holidays, heating season
+- the newest model has 6 more features about the temperature inversion (see below)
 
 **Models**
 
@@ -124,7 +126,25 @@ I chose the strength of the weights on the validation year, not on the test year
 
 The same months as the plot at the top, before the AirCast idea (dashed line) and after it (blue line). The difference is easiest to see in early February 2025. The real level was 100-125 µg/m³, the model without weights predicted about 60-85, and with weights about 70-115. But sometimes it now goes too high, for example 115 when the real level was 68.
 
-Normal days didn't really change, but the most polluted days did. On validation the result was mixed: the winter error went up a little (12.36 to 12.60), because there the model was already predicting too high. There were only 32 very polluted days in the test, so I want to check this again this winter with the bot's forecasts. The Telegram bot uses the model with weights.
+Normal days didn't really change, but the most polluted days did. On validation the result was mixed: the winter error went up a little (12.36 to 12.60), because there the model was already predicting too high. There were only 32 very polluted days in the test, so I want to check this again this winter with the bot's forecasts.
+
+This idea from MBZUAI was the first thing that fixed the main weakness of my model. At first the Telegram bot used the model with weights. Since then I check every new model on the polluted days separately, not only on the average.
+
+## Inversion and log target
+
+In November 2026 I added two more things to the model.
+
+First, the temperature inversion. I take the temperature at 850 hPa (about 700 m above the city) minus the temperature at 2 m, for today and for tomorrow. Usually it is negative, because the air is colder higher up. When it is close to zero or above, warm air sits over cold air like a lid. BLH shows how high the air mixes, and this shows how strong the lid is.
+
+Second, the model now learns log(1 + PM2.5) instead of PM2.5. Then an error of 10 on a clean day costs more than an error of 10 on a smog day: 5 instead of 15 is a big miss, 90 instead of 100 is not.
+
+| MAE | LightGBM | with AirCast weights | with inversion and log |
+|---|---|---|---|
+| validation 2024 | 8.87 | 9.03 | 7.53 |
+| test 2025 | 6.84 | 6.39 | 5.97 |
+| test, 10% most polluted days | 24.90 | 19.48 | 17.34 |
+
+I also tried the AirCast weights on top of this model. With 6 different random seeds there was no extra gain (validation on average 7.49 without the weights, 7.58 with them), so the model in the bot has no weights now. The polluted days are still the first thing I look at.
 
 ## CHP-2 tracker
 
@@ -136,7 +156,7 @@ To see how wrong this model normally is, I left out one winter at a time, traine
 
 I made the bot first of all for my dad. Sometimes the air in Almaty gets very dirty, and I wanted him to be able to plan his walks for the next day, without worrying that a walk, which is usually good for health, could hurt his lungs. Now not only my dad but also my relatives get a message every evening about how polluted the air will be tomorrow.
 
-[@ala_smogfor_bot](https://t.me/ala_smogfor_bot) sends tomorrow's forecast every evening (planned for 22:00 Almaty time, but GitHub sometimes starts it a few hours later), in Russian, with the US EPA level and short advice. GitHub Actions downloads fresh AirGradient and weather data and makes the forecast. A small Flask server on PythonAnywhere sends it to everyone who pressed /start. Subscribers' chat IDs stay on the server, not on GitHub. The bot uses a real weather forecast for tomorrow, so it doesn't have the "perfect weather" advantage from the tests.
+[@ala_smogfor_bot](https://t.me/ala_smogfor_bot) sends tomorrow's forecast every evening (planned for 22:00 Almaty time, but GitHub sometimes starts it a few hours later), in Russian, with the US EPA level and short advice. GitHub Actions downloads fresh AirGradient and weather data and makes the forecast. A small Flask server on PythonAnywhere sends it to everyone who pressed /start. Subscribers' chat IDs stay on the server, not on GitHub. The bot uses a real weather forecast for tomorrow, so it doesn't have the "perfect weather" advantage from the tests. It uses the newest model (inversion and log target) and takes off its own mean error of the last 30 days, because in summer 2026 the model was about 3 µg/m³ too high all the time. Every forecast is saved in `results/live_forecasts.csv` before the day comes, and the real value is added the next day.
 
 ![Telegram bot messages](results/figures/bot_message.jpg)
 
@@ -148,11 +168,11 @@ There is also a simple Streamlit demo (`streamlit run app.py`). For now it only 
 
 - In the tests, tomorrow's weather comes from the archive, so it works like a perfect weather forecast. Real forecasts can be wrong. Without tomorrow's weather, the MAE goes from 6.84 to 7.11, still about 30% lower than CAMS.
 - AirGradient sensors are less exact. They read about 1.45 times higher than the US station. Only one sensor had enough days together with the station (331 days, correlation 0.93), so the factor 0.69 comes from that one sensor, and I apply it to all seven.
-- In clean months the bot predicts too high: on AirGradient days from April to October it was about 3-5 µg/m³ above the real level. One factor of 0.69 for all levels probably makes clean days too low. A formula with a shift (a + b × AirGradient) could work better, I want to test it.
+- In clean months the model predicts too high: on AirGradient days from April to October it was about 3-5 µg/m³ above the real level. One factor of 0.69 for all levels probably makes clean days too low. For now the bot fixes this in a simple way: it takes the daily level from Almaty Air Initiative and subtracts its mean error of the last 30 days.
 - Almaty Air Initiative told me that raw AirGradient sensors usually read about 1.6 times higher than reference monitors. This is close to the 1.45 I found myself, but one factor for all days is too simple: the error depends on humidity. They suggested the [EPA correction](https://www.airgradient.com/blog/epa-correction-and-airgradient/), which I want to try next.
 - I'm not fully sure where the US station is: OpenAQ puts it about 3 km from the consulate's address. I chose the AirGradient sensors around the OpenAQ point.
 - The forecast is for one point in the center. But AirGradient sensors show that in winter the north of the city can be about twice as polluted as the south near the mountains.
-- The bot misses sudden changes. At the end of October 2026 the heating season started with a week that was colder and calmer than any end of October in my data, and the bot was 7-18 µg/m³ too low for four days. With the real weather instead of the forecast, the error on these weeks is 5.2 instead of 8.7, so a big part of the live error comes from the weather forecast (details in notes.md, Day 24).
+- The bot misses sudden changes. At the end of October 2026 the heating season started with a week that was colder and calmer than any end of October in my data, and the bot was 7-18 µg/m³ too low for four days. The model had seen cold days and calm days before, but never together at the end of October (details in notes.md, Day 24).
 - I have no real traffic data, only weekdays, weekends and holidays.
 - The test is only one year, with 32 very polluted days, so small differences between the models could be luck.
 
@@ -179,9 +199,9 @@ In my flappy-bird project I wrote a neural network from scratch, and the game ma
 ## Next steps
 
 - Test the model with real weather forecasts instead of the archive.
-- Save the bot's forecasts every day and check how good they really are this winter.
+- Check the bot's saved forecasts at the end of this winter.
 - Make forecasts for different districts using AirGradient sensors around the city.
-- Compare my 0.69 factor with the corrected sensor data from Almaty Air Initiative (they offered access to their API).
+- Try the EPA correction for the AirGradient sensors.
 - Run the CHP-2 tracker after the switch to gas.
 
 ## How to run
@@ -201,6 +221,7 @@ python src/download_weather.py
 python src/download_cams.py
 python src/download_openaq.py
 python src/download_airgradient.py   # needs the embassy data from download_openaq.py
+python src/download_aai.py           # optional, needs AAI_API_KEY in .env (from Almaty Air Initiative)
 python src/build_dataset.py
 python src/train.py                  # results/metrics.csv and the models
 python src/try_weights.py            # compares different weight strengths
