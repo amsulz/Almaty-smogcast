@@ -32,10 +32,12 @@ Test year 2025 (314 days, January to mid-November). The model never saw these da
 | CAMS (global forecast from Copernicus) | 10.19 | 48.43 |
 | Linear regression | 9.55 | 23.28 |
 | "Tomorrow = today" | 8.83 | 22.61 |
+| Linear regression, log target | 7.74 | 25.34 |
 | LightGBM | 6.84 | 24.90 |
 | LightGBM + AirCast weights | 6.39 | 19.48 |
 | LightGBM + inversion + log target | **5.97** | **17.34** |
 
+- Linear regression on raw PM2.5 is worse than "tomorrow = today", because a few very high days pull the line too much. With the log target it gets better on average (7.74), but worse on the polluted days. On the validation year 2024 it was even better than LightGBM (6.41 against 7.53), in the other years worse.
 - LightGBM's error is about a third lower than CAMS and about a quarter lower than "tomorrow = today".
 - But on the most polluted days (above 58 µg/m³), plain LightGBM was not better than just saying "tomorrow = today" (about 23 for both, on average over 30 runs). So I started to check these days separately (see below).
 - CAMS misses the worst days by almost 50 µg/m³. From December to February it predicted about 34 µg/m³ on average, while the real average was 61.
