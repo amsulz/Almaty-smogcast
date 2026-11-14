@@ -88,7 +88,7 @@ def main():
     final.save_model(str(MODELS_DIR / "lgbm.txt"))
     print(f"saved model to {MODELS_DIR / 'lgbm.txt'}")
 
-    # 5. LightGBM + AirCast weights. The Telegram bot uses this one
+    # 5. LightGBM + AirCast weights. The Telegram bot used this one at first
     weighted = lgb.train(
         LGB_PARAMS,
         lgb.Dataset(train[cols], train.target, weight=rarity_weights(train.target)),
