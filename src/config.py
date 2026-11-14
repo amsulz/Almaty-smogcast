@@ -41,6 +41,6 @@ VAL_END = "2025-01-01"    # validation: 2024, test: 2025 (until EMBASSY_END)
 HEATING_START = (10, 15)  # 15 Oct
 HEATING_END = (4, 15)     # 15 Apr
 
-# CHP-2 coal -> gas. Planned for end of 2026, put the real date here when it happens.
+# CHP-2 coal -> gas. Not switched yet (checked in November 2026), put the real date here when it happens.
 # Everything before this date counts as the "coal" period.
-CHP2_SWITCH_DATE = "2026-11-01"
+CHP2_SWITCH_DATE = "2027-01-01"
