@@ -37,7 +37,7 @@ Test year 2025 (314 days, January to mid-November). The model never saw these da
 | LightGBM + inversion + log target | **5.97** | **17.34** |
 
 - LightGBM's error is about a third lower than CAMS and about a quarter lower than "tomorrow = today".
-- But on the most polluted days (above 58 µg/m³), plain LightGBM was worse than just saying "tomorrow = today". The weights fixed this (see below).
+- But on the most polluted days (above 58 µg/m³), plain LightGBM was not better than just saying "tomorrow = today" (about 23 for both, on average over 30 runs). So I started to check these days separately (see below).
 - CAMS misses the worst days by almost 50 µg/m³. From December to February it predicted about 34 µg/m³ on average, while the real average was 61.
 - After the US station stopped, I also checked the models on AirGradient days (December 2025 to October 2026, 299 days): 6.34 for LightGBM with weights, 7.15 for "tomorrow = today" and 11.24 for CAMS.
 
@@ -128,6 +128,8 @@ The same months as the plot at the top, before the AirCast idea (dashed line) an
 
 Normal days didn't really change, but the most polluted days did. On validation the result was mixed: the winter error went up a little (12.36 to 12.60), because there the model was already predicting too high. There were only 32 very polluted days in the test, so I want to check this again this winter with the bot's forecasts.
 
+Later I repeated this training 30 times with different random seeds. The numbers in the table are from one run, and that run was lucky. On average the weights lower the error on the 10% most polluted days by about 1.6 (22.7 to 21.1), and on all days almost nothing changes (6.61 and 6.53). In 2023, 2024 and 2026 the weights gave no gain (`src/backtest.py`).
+
 This idea from MBZUAI was the first thing that fixed the main weakness of my model. At first the Telegram bot used the model with weights. Since then I check every new model on the polluted days separately, not only on the average.
 
 ## Inversion and log target
@@ -145,6 +147,8 @@ Second, the model now learns log(1 + PM2.5) instead of PM2.5. Then an error of 1
 | test, 10% most polluted days | 24.90 | 19.48 | 17.34 |
 
 I also tried the AirCast weights on top of this model. With 6 different random seeds there was no extra gain (validation on average 7.49 without the weights, 7.58 with them), so the model in the bot has no weights now. The polluted days are still the first thing I look at.
+
+I also checked this model on four years, one by one (`src/backtest.py`). For each year it learned only from the days before it. It was better than "tomorrow = today" in every year: 7.1 against 9.7 in 2023, 7.5 against 9.2 in 2024, 5.9 against 8.8 in 2025 and 4.8 against 5.8 in 2026 (averages over 30 seeds, `results/backtest.csv`). The old LightGBM lost to "tomorrow = today" in 2024 (9.6 against 9.2). In 2026, on AirGradient data, the new model was not better than the old one (4.76 and 4.78), so the gain from the inversion features is clear only for 2023-2025.
 
 ## CHP-2 tracker
 
@@ -166,7 +170,7 @@ There is also a simple Streamlit demo (`streamlit run app.py`). For now it only 
 
 ## Limitations
 
-- In the tests, tomorrow's weather comes from the archive, so it works like a perfect weather forecast. Real forecasts can be wrong. Without tomorrow's weather, the MAE goes from 6.84 to 7.11, still about 30% lower than CAMS.
+- In the tests, tomorrow's weather comes from the archive, so it works like a perfect weather forecast. I checked this on 970 days with real ECMWF forecasts made the day before: the error was almost the same (5.73 with the archive, 5.71 with the forecasts). Without tomorrow's weather at all, the MAE of the first LightGBM goes from 6.84 to 7.11.
 - AirGradient sensors are less exact. They read about 1.45 times higher than the US station. Only one sensor had enough days together with the station (331 days, correlation 0.93), so the factor 0.69 comes from that one sensor, and I apply it to all seven.
 - In clean months the model predicts too high: on AirGradient days from April to October it was about 3-5 µg/m³ above the real level. One factor of 0.69 for all levels probably makes clean days too low. For now the bot fixes this in a simple way: it takes the daily level from Almaty Air Initiative and subtracts its mean error of the last 30 days.
 - Almaty Air Initiative told me that raw AirGradient sensors usually read about 1.6 times higher than reference monitors. This is close to the 1.45 I found myself, but one factor for all days is too simple: the error depends on humidity. They suggested the [EPA correction](https://www.airgradient.com/blog/epa-correction-and-airgradient/), which I want to try next.
@@ -174,7 +178,8 @@ There is also a simple Streamlit demo (`streamlit run app.py`). For now it only 
 - The forecast is for one point in the center. But AirGradient sensors show that in winter the north of the city can be about twice as polluted as the south near the mountains.
 - The bot misses sudden changes. At the end of October 2026 the heating season started with a week that was colder and calmer than any end of October in my data, and the bot was 7-18 µg/m³ too low for four days. The model had seen cold days and calm days before, but never together at the end of October (details in notes.md, Day 24).
 - I have no real traffic data, only weekdays, weekends and holidays.
-- The test is only one year, with 32 very polluted days, so small differences between the models could be luck.
+- The test is only one year, with 32 very polluted days, so small differences between the models could be luck. I saw this with the AirCast weights: one run looked much better than the average of 30 runs. I also looked at the test year more than once while I was trying ideas, so the check on four years and the bot's saved forecasts are the more honest evidence.
+- The model predicts too low on the most polluted days: on the 10% most polluted test days it is about 9 µg/m³ below the real level on average. For a warning bot this is the dangerous side of the error.
 
 ## How this project is different
 
@@ -198,7 +203,6 @@ In my flappy-bird project I wrote a neural network from scratch, and the game ma
 
 ## Next steps
 
-- Test the model with real weather forecasts instead of the archive.
 - Check the bot's saved forecasts at the end of this winter.
 - Make forecasts for different districts using AirGradient sensors around the city.
 - Try the EPA correction for the AirGradient sensors.
@@ -225,6 +229,7 @@ python src/download_aai.py           # optional, needs AAI_API_KEY in .env (from
 python src/build_dataset.py
 python src/train.py                  # results/metrics.csv and the models
 python src/try_weights.py            # compares different weight strengths
+python src/backtest.py               # checks the models on four years with several seeds
 streamlit run app.py                 # demo
 ```
 
