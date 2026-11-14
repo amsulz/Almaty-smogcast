@@ -229,7 +229,7 @@ Most of it came from 28–31.10: the real level was 38–51, and the bot said 26
 
 On 02.11 it was the opposite: the wind came back, the air got two times cleaner in one day (53 → 25), and the bot said 37. Simple "tomorrow = today" was even worse that day.
 
-With the real weather instead of the forecast, the same model has an error of 5.2 on these weeks. So more than half of the live error comes from the weather forecast, not from the model.
+With the real weather instead of the forecast, the same model has an error of 5.2 on these weeks. So more than half of the live error comes from the weather forecast, not from the model. (This turned out to be wrong, see Day 26.)
 
 I also tried two things, and both didn't help, so I didn't add them:
 - correcting the bias over 7 days instead of 30 (5.62 vs 5.49 from 15.10)
@@ -250,3 +250,15 @@ The model saw the rain and went down from 20 to 12.5, but not lower. I looked at
 I also noticed that the message came at 03:21 on 11.11 and still said "прогноз на завтра (11.11)". GitHub starts the run 2–7 hours late, in November always after midnight. I can't fix the delay from the repository, but now the bot writes "на сегодня" if the forecast day has already started.
 
 Not done yet: start the run from PythonAnywhere at 22:00 instead of the GitHub schedule, and check if the model can learn very clean days.
+
+## Day 26 — Checking my own numbers
+
+I checked three things that I was not sure about.
+
+First, Day 24. I wrote that with the real weather the error on 28.10–07.11 would be 5.2, so the weather forecast was the main reason for the misses. I recalculated the same 11 days with the same model and the archive weather. The error was 9.1, and live it was 9.3. So the weather forecast was not the reason. The 5.2 was from a longer period, and I compared different days by mistake. The new model with the inversion features gets 6.8 on these days.
+
+Second, the AirCast weights. The numbers in the README (6.84 to 6.39, and 24.90 to 19.48 on the most polluted days) are from one training run. I trained both models 30 times with different seeds. On average: 6.61 and 6.53 on all days, 22.7 and 21.1 on the most polluted days. So the weights help a little on the polluted days, and the big difference in my table was partly luck. Without the weights the error on the polluted days moves from 18.8 to 28.2 just because of the seed.
+
+Third, one test year. I made `src/backtest.py`: it checks 2023, 2024, 2025 and 2026 one by one, and for each year the model learns only from the days before it. The model with inversion and log target is better than "tomorrow = today" in all four years. In 2026 it is not better than the old LightGBM (4.76 and 4.78). The old LightGBM lost to "tomorrow = today" in 2024 (9.6 against 9.2), when it had only 458 training days and no BLH for half of the year.
+
+What I learned: one run is not a result. From now on I run a new idea with several seeds before I believe it.
