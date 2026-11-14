@@ -65,6 +65,15 @@ def main():
     save_metrics("linear regression", "test", test.target, pred_linear, note="trained on train+val")
     save_predictions(test.date, pred_linear, "linear")
 
+    # 3b. the same linear model, but it learns log(1 + PM2.5), like the model in step 6.
+    # a few very high days pull a straight line too much, with the log they are less extreme
+    linear_log = make_pipeline(SimpleImputer(strategy="median"), StandardScaler(), LinearRegression())
+    linear_log.fit(train[cols], np.log1p(train.target))
+    save_metrics("linear regression (log target)", "val", val.target, np.expm1(linear_log.predict(val[cols])))
+    linear_log.fit(train_val[cols], np.log1p(train_val.target))
+    save_metrics("linear regression (log target)", "test", test.target,
+                 np.expm1(linear_log.predict(test[cols])), note="trained on train+val")
+
     # 4. LightGBM. early stopping on val to pick the number of trees
     model = lgb.train(
         LGB_PARAMS,

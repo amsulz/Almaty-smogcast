@@ -16,3 +16,5 @@ CAMS,airgradient,11.24,15.41,0.89,299,"AirGradient sensors, scaled to the embass
 linear regression,airgradient,8.16,11.34,0.756,299,"AirGradient sensors, scaled to the embassy"
 LightGBM,airgradient,6.98,9.81,0.933,299,"AirGradient sensors, scaled to the embassy"
 LightGBM + AirCast weights,airgradient,6.34,9.46,0.93,299,"AirGradient sensors, scaled to the embassy"
+linear regression (log target),val,6.41,9.93,0.922,344,
+linear regression (log target),test,7.74,12.17,0.92,314,trained on train+val
