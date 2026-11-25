@@ -3,6 +3,7 @@
 Also the temperature higher up (850 and 700 hPa), it is needed for the inversion features.
 The archive doesn't have it, so it comes from the archive of old forecasts (starts 2021-03-23).
 """
+import time
 from datetime import date, timedelta
 
 import pandas as pd
@@ -27,6 +28,20 @@ UPPER_START = "2021-03-23"
 UPPER_VARIABLES = ["temperature_850hPa", "temperature_700hPa"]
 
 
+def get_json(url, params):
+    # open-meteo sometimes doesn't answer in time, so we try 3 times before giving up (same as forecast.py)
+    for attempt in range(3):
+        try:
+            response = requests.get(url, params=params, timeout=120)
+            response.raise_for_status()
+            return response.json()
+        except requests.RequestException as error:
+            if attempt == 2:
+                raise
+            print(f"  {url} failed ({error}), retry in 60 s")
+            time.sleep(60)
+
+
 def download_upper(end_date):
     params = {
         "latitude": LATITUDE,
@@ -36,9 +51,7 @@ def download_upper(end_date):
         "hourly": ",".join(UPPER_VARIABLES),
         "timezone": TIMEZONE,
     }
-    response = requests.get(UPPER_URL, params=params, timeout=120)
-    response.raise_for_status()
-    upper = pd.DataFrame(response.json()["hourly"])
+    upper = pd.DataFrame(get_json(UPPER_URL, params)["hourly"])
     upper["time"] = pd.to_datetime(upper["time"])
     return upper
 
@@ -54,10 +67,7 @@ def main():
         "hourly": ",".join(VARIABLES),
         "timezone": TIMEZONE,
     }
-    response = requests.get(URL, params=params, timeout=120)
-    response.raise_for_status()
-
-    df = pd.DataFrame(response.json()["hourly"])
+    df = pd.DataFrame(get_json(URL, params)["hourly"])
     df["time"] = pd.to_datetime(df["time"])
     df = df.merge(download_upper(end_date), on="time", how="left")
 
